@@ -20,6 +20,15 @@ function parse_xyz(bytes, offset)
 }
 
 
+function tri_new(p0, p1, p2)
+{
+	return {
+		model: [p0,p1,p2],
+		screen: [],
+		normal: [],
+	};
+}
+
 function parse_stl_binary(raw_bytes)
 {
 	console.log(raw_bytes);
@@ -44,13 +53,11 @@ function parse_stl_binary(raw_bytes)
 
 	for (let offset = 84 ; offset < raw_bytes.length ; offset += 50)
 	{
-		let t;
-
-		triangles.push([
+		triangles.push(tri_new(
 			parse_xyz(bytes, offset + 12),
 			parse_xyz(bytes, offset + 24),
-			parse_xyz(bytes, offset + 32),
-		]);
+			parse_xyz(bytes, offset + 36),
+		));
 	}
 
 	console.log(triangles);
@@ -74,21 +81,52 @@ function loadBytes(file, callback) {
 }
 
 
+let stl;
+
 function setup()
 {
 	createCanvas(1024, 1024); // WEBGL?
+	background(0);
+
 	//httpGet("/test.stl", parse_stl_binary);
-	loadBytes("/test.stl", parse_stl_binary);
+	loadBytes("/test.stl", function(d){ stl = parse_stl_binary(d) });
 }
+
+
+function v3_line(p0,p1)
+{
+	line(p0.x, p0.y, p1.x, p1.y);
+}
+
+
+let x_offset = 512;
+let y_offset = 512;
+let z_scale = 10;
 
 function draw()
 {
-/*
-  if (mouseIsPressed) {
-    fill(0);
-  } else {
-    fill(255);
-  }
-  ellipse(mouseX, mouseY, 80, 80);
-*/
+	if (!stl)
+		return;
+
+  	if (mouseIsPressed) {
+		background(0);
+		x_offset = mouseX;
+		y_offset = mouseY;
+	}
+
+	push();
+	translate(x_offset, y_offset);
+	scale(z_scale);
+
+	stroke(255);
+	strokeWeight(0.1);
+
+	for(t of stl)
+	{
+		v3_line(t.model[0], t.model[1]);
+		v3_line(t.model[1], t.model[2]);
+		v3_line(t.model[2], t.model[0]);
+	}
+
+	pop();
 }
