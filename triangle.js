@@ -9,8 +9,21 @@ function tri_normal(p0,p1,p2)
 
 function close_enough(p0,p1)
 {
-	let m = p5.Vector.sub(p0,p1).magSq();
-	return m < 0.001;
+	let eps = 0.001;
+
+	let dx = p0.x - p1.x;
+	if (dx < -eps || eps < dx)
+		return false;
+
+	let dy = p0.y - p1.y;
+	if (dy < -eps || eps < dy)
+		return false;
+
+	let dz = p0.z - p1.z;
+	if (dz < -eps || eps < dz)
+		return false;
+
+	return true;
 }
 
 
