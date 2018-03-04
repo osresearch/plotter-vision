@@ -6,6 +6,14 @@ function tri_normal(p0,p1,p2)
 	return v0.cross(v1).normalize();
 }
 
+
+function close_enough(p0,p1)
+{
+	let m = p5.Vector.sub(p0,p1).magSq();
+	return m < 0.001;
+}
+
+
 function Triangle(p0, p1, p2)
 {
 
@@ -28,7 +36,8 @@ function Triangle(p0, p1, p2)
 
 	// compute the coordinates in screen space and decide
 	// if it is onscreen or backfaced culled
-	this.project = function (camera,generation) {
+	this.project = function (camera,generation)
+	{
 		this.generation = generation;
 		this.invisible = true; // assume it will be discarded
 		this.screen = [];
@@ -62,6 +71,63 @@ function Triangle(p0, p1, p2)
 		this.invisible = false;
 		return true;
 	};
+
+	// determines if this triangle shares any edges with
+	// other triangle.  returns a bitmask of the shared edges
+	// this only needs to be done once when the STL is loaded
+	// but does require N^2 time so it should be deferred
+	this.coplanar_check = function (t)
+	{
+		// ignore t if it is the same triangle
+		if (t === this)
+			return 0;
+
+		// if the normals aren't "close enough" then
+		// they can't be coplanar
+		if (!close_enough(this.normal, t.normal))
+			return 0;
+
+		// do we have any point matches?
+		let matches = 0;
+		for(let i = 0 ; i < 3 ; i++)
+			for(let j = 0 ; j < 3 ; j++)
+				if (close_enough(this.model[i], t.model[j]))
+					matches |= 1 << i;
+
+		// points 0 and 1 == edge 0
+		if (matches == 0b011) return 1 << 0;
+
+		// points 1 and 2 == edge 1
+		if (matches == 0b110) return 1 << 1;
+
+		// points 0 and 2 == edge 2
+		if (matches == 0b101) return 1 << 2;
+
+		// all three points match: we have a problem
+		if (matches == 0b111)
+			console.log("three points match? " + this + " " + t);
+
+		return 0;
+	}
+
+	// process a list of triangles and update the coplanar field
+	this.coplanar_update = function (triangles)
+	{
+		for(t of triangles)
+		{
+			let edges = this.coplanar_check(t);
+			if (edges == 0)
+				continue;
+
+			this.coplanar |= edges;
+
+			// if all three edges are matched, we can stop
+			// searching since this triangle will not be
+			// displayed anyway
+			if (this.coplanar == 0b111)
+				break;
+		}
+	}
 }
 
 

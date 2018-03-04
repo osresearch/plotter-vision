@@ -17,6 +17,8 @@ let z_scale = 10;
 let stl = false;
 let camera, eye, lookat, up;
 let fov;
+let redraw = false;
+let done_coplanar;
 
 
 
@@ -62,6 +64,9 @@ function parse_stl_binary(raw_bytes)
 	}
 
 	console.log(triangles);
+	done_coplanar = 0;
+	redraw = true;
+
 	return triangles;
 }
 
@@ -84,13 +89,14 @@ function loadBytes(file, callback) {
 
 function setup()
 {
-	createCanvas(1024, 1024); // WEBGL?
-	background(0);
+	//createCanvas(displayWidth, displayHeight); // WEBGL?
+	createCanvas(1920, 1080); // WEBGL?
+	background(255);
 
 	//httpGet("/test.stl", parse_stl_binary);
 	loadBytes("/test.stl", function(d){ stl = parse_stl_binary(d) });
 
-	eye = createVector(0,0,1000);
+	eye = createVector(0,0,2000);
 	lookat = createVector(0,0,0);
 	up = createVector(0,1,0);
 	fov = 80;
@@ -112,17 +118,21 @@ function draw()
 		return;
 
   	if (mouseIsPressed) {
-		background(0);
-		camera.eye.x = mouseX - width/2;
-		camera.eye.y = mouseY - height/2;
+		camera.eye.x = width/2 - mouseX;
+		camera.eye.y = height/2 - mouseY;
 		camera.update_matrix();
+		redraw = true;
 	}
 
+	if (!redraw)
+		return;
+
+	background(255);
 	push();
 	translate(x_offset, y_offset);
 	scale(z_scale);
 
-	stroke(255);
+	stroke(0,0,0,100);
 	strokeWeight(0.1);
 
 	for(t of stl)
@@ -151,4 +161,16 @@ function draw()
 	}
 
 	pop();
+
+	redraw = false;
+
+	// if we haven't finished our coplanar analysis
+	// attempt to find another few coplanar items
+	if (done_coplanar < stl.length)
+	{
+		console.log("coplanar processing " + done_coplanar);
+		for(let i = 0 ; i < 128 && done_coplanar < stl.length ; i++)
+			stl[done_coplanar++].coplanar_update(stl)
+		redraw = true;
+	}
 }
