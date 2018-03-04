@@ -14,7 +14,7 @@ function m44_mult(a,b)
 	for(let i = 0 ; i < 4 ; i++)
 		for(let j = 0 ; j < 4 ; j++)
 			for(let k = 0 ; k < 4 ; k++)
-				c[i][k] += a[i][k] * b[k][j];
+				c[i][j] += a[i][k] * b[k][j];
 
 	return c;
 }
@@ -26,6 +26,9 @@ function Camera(eye,lookat,up,fov)
 	this.lookat = lookat;
 	this.up = up;
 	this.fov = fov;
+	this.generation = 0;
+	this.width = 1024;
+	this.height = 1024;
 
 	// project a point from model space to camera space
 	this.project = function(v_in)
@@ -85,6 +88,7 @@ function Camera(eye,lookat,up,fov)
 
 		this.matrix = m44_mult(perspective, cam);
 		console.log("Camera matrix: " + this.matrix);
+		this.generation++;
 	}
 
 	this.update_matrix();

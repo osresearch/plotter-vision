@@ -10,6 +10,16 @@
  *   uint16_t attributes (ignored)
  */
 
+let x_offset;
+let y_offset;
+let z_scale = 10;
+
+let stl = false;
+let camera, eye, lookat, up;
+let fov;
+
+
+
 function parse_xyz(bytes, offset)
 {
 	return createVector(
@@ -17,18 +27,6 @@ function parse_xyz(bytes, offset)
 		bytes.getFloat32(offset+4, 1),
 		bytes.getFloat32(offset+8, 1),
 	);
-}
-
-
-function tri_new(p0, p1, p2)
-{
-	let t = {
-		model: [p0,p1,p2],
-		screen: [],
-		normal: [],
-	};
-
-	return t;
 }
 
 
@@ -56,7 +54,7 @@ function parse_stl_binary(raw_bytes)
 
 	for (let offset = 84 ; offset < raw_bytes.length ; offset += 50)
 	{
-		triangles.push(tri_new(
+		triangles.push(new Triangle(
 			parse_xyz(bytes, offset + 12),
 			parse_xyz(bytes, offset + 24),
 			parse_xyz(bytes, offset + 36),
@@ -84,10 +82,6 @@ function loadBytes(file, callback) {
 }
 
 
-let stl;
-let camera, eye, lookat, up;
-let fov = 45;
-
 function setup()
 {
 	createCanvas(1024, 1024); // WEBGL?
@@ -96,9 +90,12 @@ function setup()
 	//httpGet("/test.stl", parse_stl_binary);
 	loadBytes("/test.stl", function(d){ stl = parse_stl_binary(d) });
 
-	eye = createVector(0,0,100);
+	eye = createVector(0,0,1000);
 	lookat = createVector(0,0,0);
 	up = createVector(0,1,0);
+	fov = 80;
+	x_offset = width/2;
+	y_offset = height/2;
 	camera = new Camera(eye,lookat,up,fov);
 }
 
@@ -109,11 +106,6 @@ function v3_line(p0,p1)
 }
 
 
-let recompute = false;
-let x_offset = 512;
-let y_offset = 512;
-let z_scale = 10;
-
 function draw()
 {
 	if (!stl)
@@ -121,9 +113,9 @@ function draw()
 
   	if (mouseIsPressed) {
 		background(0);
-		x_offset = mouseX;
-		y_offset = mouseY;
-		recompute = true;
+		camera.eye.x = mouseX - width/2;
+		camera.eye.y = mouseY - height/2;
+		camera.update_matrix();
 	}
 
 	push();
@@ -135,16 +127,27 @@ function draw()
 
 	for(t of stl)
 	{
-		let t0 = camera.project(t.model[0]);
-		let t1 = camera.project(t.model[1]);
-		let t2 = camera.project(t.model[2]);
+		if (t.generation == camera.generation)
+			continue;
+		t.generation = camera.generation;
+		t.project(camera);
+	}
 
-		if (!t0 || !t1 || !t2)
+	for(t of stl)
+	{
+		if (t.invisible)
 			continue;
 
-		v3_line(t0, t1);
-		v3_line(t1, t2);
-		v3_line(t2, t0);
+		let t0 = t.screen[0];
+		let t1 = t.screen[1];
+		let t2 = t.screen[2];
+
+		if ((t.coplanar & 1) == 0)
+			v3_line(t0, t1);
+		if ((t.coplanar & 2) == 0)
+			v3_line(t1, t2);
+		if ((t.coplanar & 4) == 0)
+			v3_line(t2, t0);
 	}
 
 	pop();
