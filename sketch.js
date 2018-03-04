@@ -12,22 +12,25 @@
 
 function parse_xyz(bytes, offset)
 {
-	return {
-		x: bytes.getFloat32(offset+0, 1),
-		y: bytes.getFloat32(offset+4, 1),
-		z: bytes.getFloat32(offset+8, 1),
-	}
+	return createVector(
+		bytes.getFloat32(offset+0, 1),
+		bytes.getFloat32(offset+4, 1),
+		bytes.getFloat32(offset+8, 1),
+	);
 }
 
 
 function tri_new(p0, p1, p2)
 {
-	return {
+	let t = {
 		model: [p0,p1,p2],
 		screen: [],
 		normal: [],
 	};
+
+	return t;
 }
+
 
 function parse_stl_binary(raw_bytes)
 {
