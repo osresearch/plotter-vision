@@ -7,6 +7,25 @@ function tri_normal(p0,p1,p2)
 }
 
 
+
+function v3min(v0,v1)
+{
+	return createVector(
+		min(v0.x, v1.x),
+		min(v0.y, v1.y),
+		min(v0.z, v1.z),
+	);
+}
+
+function v3max(v0,v1)
+{
+	return createVector(
+		max(v0.x, v1.x),
+		max(v0.y, v1.y),
+		max(v0.z, v1.z),
+	);
+}
+
 function close_enough(p0,p1)
 {
 	let eps = 0.001;
@@ -82,6 +101,10 @@ function Triangle(p0, p1, p2)
 		// after all that, the triangle is visible
 		this.screen = [s0,s1,s2];
 		this.invisible = false;
+
+		// cache the min/max coordinates for a bounding box
+		this.min = v3min(v3min(s0,s1),s2);
+		this.max = v3max(v3max(s0,s1),s2);
 		return true;
 	};
 
@@ -140,6 +163,28 @@ function Triangle(p0, p1, p2)
 			if (this.coplanar == 0b111)
 				break;
 		}
+	}
+
+	// compute the barycentric coordinates for a point in screen space
+	// and the screen Z of the point on the triangle
+	// this can be used to determine if a point is inside or outside
+	// of a triangle
+	this.bary_coord = function (p)
+	{
+		let t1 = p5.Vector.sub(this.screen[1], this.screen[0]);
+		let t2 = p5.Vector.sub(this.screen[2], this.screen[0]);
+		let px = p.x - this.screen[0].x;
+		let py = p.y - this.screen[0].y;
+
+		let d = t1.x * t2.y - t2.x * t1.y;
+		let a = (px * t2.y - py * t2.x) / d;
+		let b = (py * t1.x - px * t1.y) / d;
+
+		return createVector(
+			a,
+			b,
+			p.z + a * t1.z + b * t2.z,
+		);
 	}
 }
 

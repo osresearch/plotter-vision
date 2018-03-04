@@ -18,7 +18,10 @@ let stl = false;
 let camera, eye, lookat, up;
 let fov;
 let redraw = false;
+let reproject = false;
 let done_coplanar;
+let segments = [];
+let hidden_segments = [];
 
 
 
@@ -93,8 +96,7 @@ function setup()
 	createCanvas(1920, 1080); // WEBGL?
 	background(255);
 
-	//httpGet("/test.stl", parse_stl_binary);
-	loadBytes("/test.stl", function(d){ stl = parse_stl_binary(d) });
+	loadBytes("/test1.stl", function(d){ stl = parse_stl_binary(d) });
 
 	eye = createVector(0,0,2000);
 	lookat = createVector(0,0,0);
@@ -122,8 +124,13 @@ function draw()
 		camera.eye.y = height/2 - mouseY;
 		camera.update_matrix();
 		redraw = true;
+		done_hidden = 0;
+		hidden_segments = [];
+		segments = [];
+		reproject = true;
 	}
 
+	// if there are segments left to process, continue to force redraw
 	if (!redraw)
 		return;
 
@@ -132,45 +139,81 @@ function draw()
 	translate(x_offset, y_offset);
 	scale(z_scale);
 
-	stroke(0,0,0,100);
+	if(reproject)
+	{
+		reproject = false;
+
+		for(t of stl)
+		{
+			if (t.generation == camera.generation)
+				continue;
+			t.generation = camera.generation;
+			if (!t.project(camera))
+				continue;
+
+			// this one is on screen, create segments for each
+			// of its non-coplanar edges
+			let t0 = t.screen[0];
+			let t1 = t.screen[1];
+			let t2 = t.screen[2];
+
+			if ((t.coplanar & 1) == 0)
+				segments.push({ p0: t0, p1: t1 });
+			if ((t.coplanar & 2) == 0)
+				segments.push({ p0: t1, p1: t2 });
+			if ((t.coplanar & 4) == 0)
+				segments.push({ p0: t2, p1: t0 });
+		}
+	}
+
+	// draw all of our in-processing segments lightly
 	strokeWeight(0.1);
+	stroke(255,0,0,100);
+	for(s of segments)
+		v3_line(s.p0, s.p1);
 
-	for(t of stl)
-	{
-		if (t.generation == camera.generation)
-			continue;
-		t.generation = camera.generation;
-		t.project(camera);
-	}
-
-	for(t of stl)
-	{
-		if (t.invisible)
-			continue;
-
-		let t0 = t.screen[0];
-		let t1 = t.screen[1];
-		let t2 = t.screen[2];
-
-		if ((t.coplanar & 1) == 0)
-			v3_line(t0, t1);
-		if ((t.coplanar & 2) == 0)
-			v3_line(t1, t2);
-		if ((t.coplanar & 4) == 0)
-			v3_line(t2, t0);
-	}
+	// Draw all of our visible segments sharply
+	strokeWeight(0.1);
+	stroke(0,0,0,255);
+	for(s of hidden_segments)
+		v3_line(s.p0, s.p1);
 
 	pop();
 
-	redraw = false;
+	if (mouseIsPressed)
+	{
+		// they are dragging; do not try to do any additional work
+		console.log("deferring work: " + stl.length + " out of " + done_coplanar + " coplanar, " + segments.length + " raw " + hidden_segments.length + " hidden");
+		return;
+	}
 
 	// if we haven't finished our coplanar analysis
 	// attempt to find another few coplanar items
 	if (done_coplanar < stl.length)
 	{
 		console.log("coplanar processing " + done_coplanar);
+		redraw = true;
+		reproject = true;
+
 		for(let i = 0 ; i < 128 && done_coplanar < stl.length ; i++)
 			stl[done_coplanar++].coplanar_update(stl)
+
+	} else
+	if (segments.length != 0)
+	{
+		// coplanar processing is done; find the hidden
+		// line segments if they are not dragging
+		console.log("hidden processing " + segments.length);
 		redraw = true;
+
+		for(let i = 0 ; i < 8 && segments.length != 0 ; i++)
+		{
+			let s = segments.shift();
+			let new_segments = hidden_wire(s, stl, 0);
+			console.log(new_segments.length + " new segments");
+			hidden_segments = hidden_segments.concat(new_segments);
+		}
+	} else {
+		redraw = false;
 	}
 }
