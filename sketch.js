@@ -85,6 +85,8 @@ function loadBytes(file, callback) {
 
 
 let stl;
+let camera, eye, lookat, up;
+let fov = 45;
 
 function setup()
 {
@@ -93,6 +95,11 @@ function setup()
 
 	//httpGet("/test.stl", parse_stl_binary);
 	loadBytes("/test.stl", function(d){ stl = parse_stl_binary(d) });
+
+	eye = createVector(0,0,100);
+	lookat = createVector(0,0,0);
+	up = createVector(0,1,0);
+	camera = new Camera(eye,lookat,up,fov);
 }
 
 
@@ -102,6 +109,7 @@ function v3_line(p0,p1)
 }
 
 
+let recompute = false;
 let x_offset = 512;
 let y_offset = 512;
 let z_scale = 10;
@@ -115,6 +123,7 @@ function draw()
 		background(0);
 		x_offset = mouseX;
 		y_offset = mouseY;
+		recompute = true;
 	}
 
 	push();
@@ -126,9 +135,16 @@ function draw()
 
 	for(t of stl)
 	{
-		v3_line(t.model[0], t.model[1]);
-		v3_line(t.model[1], t.model[2]);
-		v3_line(t.model[2], t.model[0]);
+		let t0 = camera.project(t.model[0]);
+		let t1 = camera.project(t.model[1]);
+		let t2 = camera.project(t.model[2]);
+
+		if (!t0 || !t1 || !t2)
+			continue;
+
+		v3_line(t0, t1);
+		v3_line(t1, t2);
+		v3_line(t2, t0);
 	}
 
 	pop();
