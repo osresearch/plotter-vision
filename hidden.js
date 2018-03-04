@@ -77,6 +77,92 @@ function occlude(t,s,s_out)
 		return tri_hidden;
 	}
 
+	// one or neither of the points are totally occluded
+	// so find where the extended triangle edge lines intersect
+	// the extended segment line.
+	let ratios = [];
+	let intercept_s = [];
+	let intercept_t = [];
+	let intercepts = 0;
+
+	for(let i = 0 ; i < 3 ; i++)
+	{
+		let [ratio, is, it] = intercept_lines(
+			s.p0,
+			s.p1,
+			t.screen[i],
+			t.screen[(i+1) %3],
+		);
+		if (ratio < 0)
+			continue;
+
+		// if the segment intercept is closer than the triangle
+		// intercept, then this does not count as an intersection
+		if (is.z < it.z)
+			continue;
+
+console.log("ratio " + ratio);
+console.log(is);
+		intercepts++;
+		intercept_s.push(is);
+		intercept_t.push(it);
+	}
+
+	// if none of the intersections are within the lines,
+	// then there is no possibility of occlusion
+	if (intercepts == 0)
+		return tri_no_occlusion;
+
+	// for tangent lines it is possible that the intercepts
+	// might be the same.  check and remove the duplicates if so
+	if (intercepts == 3)
+	{
+		if (close_enough(intercept_s[0], intercept_s[2]))
+		{
+			intercepts--;
+		} else
+		if (close_enough(intercept_s[1], intercept_s[2]))
+		{
+			intercepts--;
+		} else
+		if (close_enough(intercept_s[0], intercept_s[1]))
+		{
+			intercept_s[1] = intercept_s[2];
+			intercept_t[1] = intercept_t[2];
+			intercepts--;
+		}
+	}
+	if (intercepts == 2)
+	{
+		if (close_enough(intercept_s[0], intercept_s[1]))
+			intercepts--;
+	}
+
+	// this should never happen, unless there are very small triangles
+	if (intercepts == 3)
+		return tri_no_occlusion;
+
+	// one intercept should mean that only one point is inside
+	if (intercepts == 1)
+	{
+		if (inside(tp0))
+		{
+			// clipped from is0 to p1
+			s.p0 = intercept_s[0];
+			return tri_clipped;
+		}
+		if (inside(tp1))
+		{
+			// clipped from p0 to is0
+			s.p1 = intercept_s[0];
+			return tri_clipped;
+		}
+
+		// this might be a tangent, so nothing is clipped
+		return tri_no_occlusion;
+	}
+
+
 	return tri_no_occlusion;
 }
 
@@ -87,6 +173,51 @@ function inside(pb)
 	let a = pb.x;
 	let b = pb.y;
 	return 0 <= a && 0 <= b && a + b <= 1 + EPS;
+}
+
+
+// returns the ratio along the segment of the intercept and if
+// this occurs on the segment both of the z points
+//
+// this solves only the 2D "orthographic" case for the X and Y
+// coordinates
+function intercept_lines(p0,p1,p2,p3)
+{
+	let s1x = p1.x - p0.x;
+	let s1y = p1.y - p0.y;
+	let s2x = p3.x - p2.x;
+	let s2y = p3.y - p2.y;
+
+	// compute s1 x s2
+	let d = -s1x * s1y + s1x * s2y;
+
+	// if they are close to parallel then we define that
+	// as non-intersecting
+	if (-EPS < d && d < EPS)
+		return [-1,null,null];
+
+	// compute how far along each line they would intersect
+	let r0 = (s2x * (p0.y - p2.y) - s2y * (p0.x - p2.x)) / d;
+	let r1 = (s1x * (p0.y - p2.y) - s1y * (p0.x - p2.x)) / d;
+
+	// if they are outside of (0,1) then the intersection
+	// occurs outside of either segment and are non-intersecting
+	if (r0 < 0 || r0 > 1
+	||  r1 < 0 || r1 > 1)
+		return [-1,null,null];
+
+	let is = createVector(
+		p0.x + r0 * s1x,
+		p0.y + r0 * s1y,
+		p0.z + r0 * (p1.z - p0.z)
+	);
+	let it = createVector(
+		p2.x + r1 * s2x,
+		p2.y + r1 * s2y,
+		p2.z + r1 * (p3.z - p2.z)
+	);
+
+	return [r0, is, it];
 }
 
 
