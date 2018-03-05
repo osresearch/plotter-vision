@@ -98,7 +98,7 @@ function setup()
 
 	loadBytes("/test1.stl", function(d){ stl = parse_stl_binary(d) });
 
-	eye = createVector(0,0,2000);
+	eye = createVector(0,0,1000);
 	lookat = createVector(0,0,0);
 	up = createVector(0,1,0);
 	fov = 80;
@@ -110,7 +110,14 @@ function setup()
 
 function v3_line(p0,p1)
 {
-	line(p0.x, p0.y, p1.x, p1.y);
+	line(p0.x, -p0.y, p1.x, -p1.y);
+	push();
+	strokeWeight(0.1);
+	stroke(0,0,255,10);
+	textSize(1.5);
+	text(int(p0.z), p0.x, -p0.y);
+	text(int(p1.z), p1.x, -p1.y);
+	pop();
 }
 
 
@@ -166,6 +173,12 @@ function draw()
 		}
 	}
 
+	// draw an origin
+	strokeWeight(0.1);
+	stroke(0,0,255,40);
+	line(0,0,0,20);
+	line(0,0,10,0);
+
 	// draw all of our in-processing segments lightly
 	strokeWeight(0.1);
 	stroke(255,0,0,100);
@@ -183,7 +196,6 @@ function draw()
 	if (mouseIsPressed)
 	{
 		// they are dragging; do not try to do any additional work
-		console.log("deferring work: " + stl.length + " out of " + done_coplanar + " coplanar, " + segments.length + " raw " + hidden_segments.length + " hidden");
 		return;
 	}
 
@@ -203,7 +215,7 @@ function draw()
 	{
 		// coplanar processing is done; find the hidden
 		// line segments if they are not dragging
-		console.log("hidden processing " + segments.length);
+		//console.log("hidden processing " + segments.length);
 		redraw = true;
 
 		for(let i = 0 ; i < 8 && segments.length != 0 ; i++)
