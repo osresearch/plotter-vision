@@ -28,7 +28,7 @@ function v3max(v0,v1)
 
 function close_enough(p0,p1)
 {
-	let eps = 0.001;
+	let eps = 0.00001;
 
 	let dx = p0.x - p1.x;
 	if (dx < -eps || eps < dx)
@@ -95,7 +95,7 @@ function Triangle(p0, p1, p2)
 		// compute the screen normal and mark this triangle
 		// as invisible if it is facing away from us
 		let normal = tri_normal(s0,s1,s2);
-		if (normal.z > 0)
+		if (normal.z < 0)
 			return false;
 
 		// after all that, the triangle is visible
