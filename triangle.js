@@ -147,21 +147,26 @@ function Triangle(p0, p1, p2)
 	}
 
 	// process a list of triangles and update the coplanar field
-	this.coplanar_update = function (triangles)
+	this.coplanar_update = function (triangle_map)
 	{
-		for(t of triangles)
+		// for each point in the triangle, look at the points
+		// that potentially match the point
+		for(p of this.model)
 		{
-			let edges = this.coplanar_check(t);
-			if (edges == 0)
-				continue;
+			for(t of triangle_map[stl_key(p)])
+			{
+				let edges = this.coplanar_check(t);
+				if (edges == 0)
+					continue;
 
-			this.coplanar |= edges;
+				this.coplanar |= edges;
 
-			// if all three edges are matched, we can stop
-			// searching since this triangle will not be
-			// displayed anyway
-			if (this.coplanar == 0b111)
-				break;
+				// if all three edges are matched, we can stop
+				// searching since this triangle will not be
+				// displayed anyway
+				if (this.coplanar == 0b111)
+					return;
+			}
 		}
 	}
 

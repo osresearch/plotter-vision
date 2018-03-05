@@ -15,6 +15,7 @@ let y_offset;
 let z_scale = 10;
 
 let stl = false;
+let stl_map = false;
 let camera, eye, lookat, up;
 let fov;
 let redraw = false;
@@ -74,6 +75,30 @@ function parse_stl_binary(raw_bytes)
 }
 
 
+function stl_key(p)
+{
+	return int(p.x*100) + "," + int(p.y*100) + "," +int(p.z*100);
+}
+
+// map the STL vertices within a fraction of a pixel
+function stl_vertex(triangles)
+{
+	let m = {};
+	for(t of triangles)
+	{
+		let k0 = stl_key(t.model[0]);
+		let k1 = stl_key(t.model[1]);
+		let k2 = stl_key(t.model[2]);
+
+		if(m[k0]) m[k0].push(t); else m[k0] = [t];
+		if(m[k1]) m[k1].push(t); else m[k1] = [t];
+		if(m[k2]) m[k2].push(t); else m[k2] = [t];
+	}
+
+	return m;
+}
+
+
 function loadBytes(file, callback) {
   let oReq = new XMLHttpRequest();
   oReq.open("GET", file, true);
@@ -96,7 +121,10 @@ function setup()
 	createCanvas(1920, 1080); // WEBGL?
 	background(255);
 
-	loadBytes("/test1.stl", function(d){ stl = parse_stl_binary(d) });
+	loadBytes("/test.stl", function(d){
+		stl = parse_stl_binary(d);
+		stl_map = stl_vertex(stl);
+	 });
 
 	eye = createVector(0,0,1000);
 	lookat = createVector(0,0,0);
@@ -111,6 +139,7 @@ function setup()
 function v3_line(p0,p1)
 {
 	line(p0.x, -p0.y, p1.x, -p1.y);
+/*
 	push();
 	strokeWeight(0.1);
 	stroke(0,0,255,10);
@@ -118,6 +147,7 @@ function v3_line(p0,p1)
 	text(int(p0.z), p0.x, -p0.y);
 	text(int(p1.z), p1.x, -p1.y);
 	pop();
+*/
 }
 
 
@@ -137,18 +167,10 @@ function draw()
 		reproject = true;
 	}
 
-	// if there are segments left to process, continue to force redraw
-	if (!redraw)
-		return;
-
-	background(255);
-	push();
-	translate(x_offset, y_offset);
-	scale(z_scale);
-
 	if(reproject)
 	{
 		reproject = false;
+		redraw = true;
 
 		for(t of stl)
 		{
@@ -164,14 +186,24 @@ function draw()
 			let t1 = t.screen[1];
 			let t2 = t.screen[2];
 
-			if ((t.coplanar & 1) == 0)
+			if ((t.coplanar & 1) == 0 && dist2(t0,t1) > 1)
 				segments.push({ p0: t0, p1: t1 });
-			if ((t.coplanar & 2) == 0)
+			if ((t.coplanar & 2) == 0 && dist2(t1,t2) > 1)
 				segments.push({ p0: t1, p1: t2 });
-			if ((t.coplanar & 4) == 0)
+			if ((t.coplanar & 4) == 0 && dist2(t2,t0) > 1)
 				segments.push({ p0: t2, p1: t0 });
 		}
 	}
+
+	// if there are segments left to process, continue to force redraw
+	if (!redraw)
+		return;
+
+	background(255);
+
+	push();
+	translate(x_offset, y_offset);
+	scale(z_scale);
 
 	// draw an origin
 	strokeWeight(0.1);
@@ -181,7 +213,7 @@ function draw()
 
 	// draw all of our in-processing segments lightly
 	strokeWeight(0.1);
-	stroke(255,0,0,100);
+	stroke(255,0,0,20);
 	for(s of segments)
 		v3_line(s.p0, s.p1);
 
@@ -207,22 +239,22 @@ function draw()
 		redraw = true;
 		reproject = true;
 
-		for(let i = 0 ; i < 128 && done_coplanar < stl.length ; i++)
-			stl[done_coplanar++].coplanar_update(stl)
+		if (stl_map)
+		for(let i = 0 ; i < 4096 && done_coplanar < stl.length ; i++)
+			stl[done_coplanar++].coplanar_update(stl_map)
 
 	} else
 	if (segments.length != 0)
 	{
 		// coplanar processing is done; find the hidden
 		// line segments if they are not dragging
-		//console.log("hidden processing " + segments.length);
+		console.log("hidden processing " + segments.length);
 		redraw = true;
 
-		for(let i = 0 ; i < 8 && segments.length != 0 ; i++)
+		for(let i = 0 ; i < 1024 && segments.length != 0 ; i++)
 		{
 			let s = segments.shift();
 			let new_segments = hidden_wire(s, stl, 0);
-			console.log(new_segments.length + " new segments");
 			hidden_segments = hidden_segments.concat(new_segments);
 		}
 	} else {

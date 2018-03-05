@@ -21,7 +21,7 @@ function occlude(t,s)
 
 	// if the segment is too short in screen space we are done
 	let seg_len = dist2(s.p1, s.p0);
-	if (seg_len < EPS)
+	if (seg_len < 0.5)
 		return [tri_hidden];
 
 	let p_max = v3max(s.p0,s.p1);
@@ -74,10 +74,12 @@ function occlude(t,s)
 		// not on a triangle edge and not infront of
 		// the triangle, so the segment is totally occluded
 		// could we also just check for z coordinates?
+/*
 console.log("BOTH INSIDE");
 console.log(s);
 console.log(tp0);
 console.log(tp1);
+*/
 		return [tri_hidden];
 	}
 
