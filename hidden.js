@@ -9,7 +9,7 @@ const tri_in_front = 1; // no occlusion and processing should stop
 const tri_hidden = 2; // occlusion and the segment is totally hidden
 const tri_clipped = 3; // occlusion and either p0 or p1 has been updated
 const tri_split = 4; //  occlusion and p0/p1 have been updated and p2/p3 have been created
-const EPS = 0.0001;
+const EPS = 0.00001;
 
 function occlude(t,s,s_out)
 {
@@ -19,8 +19,8 @@ function occlude(t,s,s_out)
 	if (t.invisible)
 		return tri_no_occlusion;
 
-	// if the segment is too short we are done
-	let seg_len = p5.Vector.sub(s.p1,s.p0).magSq();
+	// if the segment is too short in screen space we are done
+	let seg_len = dist2(s.p1, s.p0);
 	if (seg_len < 0.1)
 		return tri_hidden;
 
@@ -162,8 +162,57 @@ console.log(is);
 		return tri_no_occlusion;
 	}
 
+	// two intercept: figure out which intercept point is closer
+	// to which point and create a new segment
+	let d00 = dist2(intercept_s[0], s.p0);
+	let d01 = dist2(intercept_s[1], s.p0);
+	let d10 = dist2(intercept_s[0], s.p1);
+	let d11 = dist2(intercept_s[1], s.p1);
 
-	return tri_no_occlusion;
+	if (d00 < EPS && d11 < EPS)
+		return tri_hidden;
+	if (d01 < EPS && d10 < EPS)
+		return tri_hidden;
+
+	if (d00 < EPS)
+	{
+		s.p0 = intercept_s[1];
+		return tri_clipped;
+	} else
+	if (d10 < EPS)
+	{
+		s.p0 = intercept_s[0];
+		return tri_clipped;
+	} else
+	if (d01 < EPS)
+	{
+		s.p1 = intercept_s[1];
+		return tri_clipped;
+	} else
+	if (d11 < EPS)
+	{
+		s.p1 = intercept_s[0];
+		return tri_clipped;
+	}
+
+	// neither end point matches, so we'll create a new
+	// segment that excludes the space between is0 and is1
+	if (d00 < d01)
+	{
+		// p0 is closer to is0, so the new segments
+		// are from p0 to is0 and is1 to p1
+		s_out.p0 = intercept_s[1];
+		s_out.p1 = s.p1;
+		s.p1 = intercept_s[0];
+	} else {
+		// p0 is closer to is1, so the new segments
+		// are from p0 to is1 and is0 to 1
+		s_out.p0 = intercept_s[0];
+		s_out.p1 = s.p1;
+		s.p1 = intercept_s[1];
+	}
+
+	return tri_split;
 }
 
 
@@ -175,6 +224,11 @@ function inside(pb)
 	return 0 <= a && 0 <= b && a + b <= 1 + EPS;
 }
 
+function dist2(p0,p1)
+{
+	return p5.Vector.sub(p1,p0).magSq();
+}
+
 
 // returns the ratio along the segment of the intercept and if
 // this occurs on the segment both of the z points
@@ -183,13 +237,11 @@ function inside(pb)
 // coordinates
 function intercept_lines(p0,p1,p2,p3)
 {
-	let s1x = p1.x - p0.x;
-	let s1y = p1.y - p0.y;
-	let s2x = p3.x - p2.x;
-	let s2y = p3.y - p2.y;
+	let s0 = p5.Vector.sub(p1,p0);
+	let s1 = p5.Vector.sub(p2,p3);
 
-	// compute s1 x s2
-	let d = -s1x * s1y + s1x * s2y;
+	// compute s0 x s1
+	let d = -s0.x * s0.y + s0.x * s1.y;
 
 	// if they are close to parallel then we define that
 	// as non-intersecting
@@ -197,8 +249,8 @@ function intercept_lines(p0,p1,p2,p3)
 		return [-1,null,null];
 
 	// compute how far along each line they would intersect
-	let r0 = (s2x * (p0.y - p2.y) - s2y * (p0.x - p2.x)) / d;
-	let r1 = (s1x * (p0.y - p2.y) - s1y * (p0.x - p2.x)) / d;
+	let r0 = (s1.x * (p0.y - p2.y) - s1.y * (p0.x - p2.x)) / d;
+	let r1 = (s0.x * (p0.y - p2.y) - s0.y * (p0.x - p2.x)) / d;
 
 	// if they are outside of (0,1) then the intersection
 	// occurs outside of either segment and are non-intersecting
@@ -206,18 +258,12 @@ function intercept_lines(p0,p1,p2,p3)
 	||  r1 < 0 || r1 > 1)
 		return [-1,null,null];
 
-	let is = createVector(
-		p0.x + r0 * s1x,
-		p0.y + r0 * s1y,
-		p0.z + r0 * (p1.z - p0.z)
-	);
-	let it = createVector(
-		p2.x + r1 * s2x,
-		p2.y + r1 * s2y,
-		p2.z + r1 * (p3.z - p2.z)
-	);
+	// compute the points of intersections for the two
+	// segments as p + r * s
+	s0.mult(r0).add(p0);
+	s1.mult(r1).add(p2);
 
-	return [r0, is, it];
+	return [r0, s0, s1];
 }
 
 
