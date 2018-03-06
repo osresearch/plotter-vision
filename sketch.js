@@ -16,6 +16,8 @@ let z_scale = 10;
 
 let stl = false;
 let stl_map = false;
+let key_scale = 1;
+let screen_map = false;
 let camera, eye, lookat, up;
 let fov;
 let redraw = false;
@@ -38,10 +40,7 @@ function parse_xyz(bytes, offset)
 
 function parse_stl_binary(raw_bytes)
 {
-	console.log(raw_bytes);
 	let bytes = new DataView(raw_bytes.buffer);
-
-	console.log(raw_bytes[0]);
 	let num_triangles = bytes.getUint32(80, 1); // little endian
 	console.log(num_triangles + " triangles");
 
@@ -99,6 +98,54 @@ function stl_vertex(triangles)
 }
 
 
+function stl_reproject(triangles)
+{
+	screen_map = {};
+	hidden_segments = [];
+	segments = [];
+
+	for(t of stl)
+	{
+		if (t.generation == camera.generation)
+			continue;
+		t.generation = camera.generation;
+		t.project(camera);
+		if (t.invisible)
+			continue;
+
+		// this one is on screen, create segments for each
+		// of its non-coplanar edges
+		let t0 = t.screen[0];
+		let t1 = t.screen[1];
+		let t2 = t.screen[2];
+
+		if ((t.coplanar & 1) == 0 && dist2(t0,t1) > 1)
+			segments.push({ p0: t0, p1: t1 });
+		if ((t.coplanar & 2) == 0 && dist2(t1,t2) > 1)
+			segments.push({ p0: t1, p1: t2 });
+		if ((t.coplanar & 4) == 0 && dist2(t2,t0) > 1)
+			segments.push({ p0: t2, p1: t0 });
+
+		let min_key_x = Math.trunc(t.min.x/key_scale);
+		let min_key_y = Math.trunc(t.min.y/key_scale);
+		let max_key_x = Math.trunc(t.max.x/key_scale);
+		let max_key_y = Math.trunc(t.max.y/key_scale);
+
+		for(let x=min_key_x ; x <= max_key_x ; x++)
+		{
+			for(let y=min_key_y ; y <= max_key_y ; y++)
+			{
+				let key = x + "," + y;
+				if (screen_map[key])
+					screen_map[key].push(t);
+				else
+					screen_map[key] = [t];
+			}
+		}
+	}
+}
+
+
 function loadBytes(file, callback) {
   let oReq = new XMLHttpRequest();
   oReq.open("GET", file, true);
@@ -121,7 +168,7 @@ function setup()
 	createCanvas(1920, 1080); // WEBGL?
 	background(255);
 
-	loadBytes("/test.stl", function(d){
+	loadBytes("test.stl", function(d){
 		stl = parse_stl_binary(d);
 		stl_map = stl_vertex(stl);
 	 });
@@ -156,14 +203,14 @@ function draw()
 	if (!stl)
 		return;
 
-  	if (mouseIsPressed) {
-		camera.eye.x = width/2 - mouseX;
+	if (mouseIsPressed)
+	{
+		camera.eye.x = mouseX - width/2;
 		camera.eye.y = height/2 - mouseY;
 		camera.update_matrix();
+
 		redraw = true;
 		done_hidden = 0;
-		hidden_segments = [];
-		segments = [];
 		reproject = true;
 	}
 
@@ -172,27 +219,7 @@ function draw()
 		reproject = false;
 		redraw = true;
 
-		for(t of stl)
-		{
-			if (t.generation == camera.generation)
-				continue;
-			t.generation = camera.generation;
-			if (!t.project(camera))
-				continue;
-
-			// this one is on screen, create segments for each
-			// of its non-coplanar edges
-			let t0 = t.screen[0];
-			let t1 = t.screen[1];
-			let t2 = t.screen[2];
-
-			if ((t.coplanar & 1) == 0 && dist2(t0,t1) > 1)
-				segments.push({ p0: t0, p1: t1 });
-			if ((t.coplanar & 2) == 0 && dist2(t1,t2) > 1)
-				segments.push({ p0: t1, p1: t2 });
-			if ((t.coplanar & 4) == 0 && dist2(t2,t0) > 1)
-				segments.push({ p0: t2, p1: t0 });
-		}
+		stl_reproject(stl);
 	}
 
 	// if there are segments left to process, continue to force redraw
@@ -254,7 +281,7 @@ function draw()
 		for(let i = 0 ; i < 1024 && segments.length != 0 ; i++)
 		{
 			let s = segments.shift();
-			let new_segments = hidden_wire(s, stl, 0);
+			let new_segments = hidden_wire(s, screen_map);
 			hidden_segments = hidden_segments.concat(new_segments);
 		}
 	} else {

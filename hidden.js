@@ -56,7 +56,7 @@ function occlude(t,s)
 	{
 		// if the segment z is closer than the triangle z
 		// then the segment is in front of the triangle
-		if (s.p0.z < tp0.z || s.p1.z < tp1.z)
+		if (s.p0.z < tp0.z && s.p1.z < tp1.z)
 			return [tri_no_occlusion];
 
 		// if the barycentric coord is 0 on the same edge
@@ -267,17 +267,29 @@ function intercept_lines(p0,p1,p2,p3)
 // Process a segment against a list of triangles
 // returns a list of segments that are visible
 // TODO: best if triangles is sorted by z depth
-function hidden_wire(s, triangles, start_index)
+function hidden_wire(s, screen_map)
 {
 	let segments = [];
 
-	for(let i = start_index ; i < triangles.length ; i++)
+	let min_key_x = Math.trunc(Math.min(s.p0.x, s.p1.x) / key_scale);
+	let min_key_y = Math.trunc(Math.min(s.p0.y, s.p1.y) / key_scale);
+	let max_key_x = Math.trunc(Math.max(s.p0.x, s.p1.x) / key_scale);
+	let max_key_y = Math.trunc(Math.max(s.p0.y, s.p1.y) / key_scale);
+
+	for(let x = min_key_x ; x <= max_key_x ; x++)
 	{
-		let t = triangles[i];
+		for(let y = min_key_y ; y <= max_key_y ; y++)
+		{
+			let triangles = screen_map[x + "," + y];
+			if (!triangles)
+				continue;
+
+	for(t of triangles)
+	{
 		if (t.invisible)
 			continue;
 
-		let [rc,new_segment] = occlude(triangles[i], s);
+		let [rc,new_segment] = occlude(t, s);
 		if (rc == tri_hidden)
 		{
 			return segments;
@@ -296,12 +308,14 @@ function hidden_wire(s, triangles, start_index)
 
 		if (rc == tri_split)
 		{
-			let new_segments = hidden_wire(new_segment, triangles, i+1);
+			let new_segments = hidden_wire(new_segment, screen_map);
 			segments = segments.concat(new_segments);
 			continue;
 		}
 
 		// huh?
+	}
+		}
 	}
 
 	// if we have made it all the way here, the remaining part
