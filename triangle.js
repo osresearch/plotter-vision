@@ -11,18 +11,18 @@ function tri_normal(p0,p1,p2)
 function v3min(v0,v1)
 {
 	return createVector(
-		min(v0.x, v1.x),
-		min(v0.y, v1.y),
-		min(v0.z, v1.z),
+		Math.min(v0.x, v1.x),
+		Math.min(v0.y, v1.y),
+		Math.min(v0.z, v1.z),
 	);
 }
 
 function v3max(v0,v1)
 {
 	return createVector(
-		max(v0.x, v1.x),
-		max(v0.y, v1.y),
-		max(v0.z, v1.z),
+		Math.max(v0.x, v1.x),
+		Math.max(v0.y, v1.y),
+		Math.max(v0.z, v1.z),
 	);
 }
 
@@ -188,7 +188,7 @@ function Triangle(p0, p1, p2)
 		return createVector(
 			a,
 			b,
-			p.z + a * t1.z + b * t2.z,
+			this.screen[0].z + a * t1.z + b * t2.z,
 		);
 	}
 }
