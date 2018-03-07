@@ -19,6 +19,8 @@ let camera, eye, lookat, up;
 let fov;
 let redraw = false;
 let reproject = false;
+let vx = 0;
+let vy = 0;
 
 
 
@@ -41,8 +43,8 @@ function loadBytes(file, callback) {
 
 function setup()
 {
-	//createCanvas(displayWidth, displayHeight); // WEBGL?
-	createCanvas(1920, 1080); // WEBGL?
+	createCanvas(windowWidth-10, windowHeight-10); // WEBGL?
+	//createCanvas(1000, 1080); // WEBGL?
 	background(255);
 
 	loadBytes("test.stl", function(d){
@@ -75,6 +77,34 @@ function v3_line(p0,p1)
 }
 
 
+function keyReleased()
+{
+	vx = vy = 0;
+}
+
+function keyPressed()
+{
+console.log(keyCode);
+	if (keyCode == LEFT_ARROW)
+		vx = -10;
+	else
+	if (keyCode == RIGHT_ARROW)
+		vx = +10;
+	else
+		vx = 0;
+
+	if (keyCode == UP_ARROW)
+		vy = +10;
+	else
+	if (keyCode == DOWN_ARROW)
+		vy = -10;
+	else
+		vy = 0;
+
+	//return false;
+}
+
+
 function draw()
 {
 	if (!stl)
@@ -84,16 +114,21 @@ function draw()
 	{
 		camera.eye.x = mouseX - width/2;
 		camera.eye.y = height/2 - mouseY;
-		camera.update_matrix();
 
-		redraw = true;
-		done_hidden = 0;
 		reproject = true;
 	}
+	if (vx != 0 || vy != 0)
+	{
+		camera.eye.x += vx;
+		camera.eye.y += vy;
+		reproject = true;
+	}
+
 
 	if(reproject)
 	{
 		reproject = false;
+		camera.update_matrix();
 		redraw = true;
 		stl.project(camera);
 	}
@@ -129,6 +164,6 @@ function draw()
 	pop();
 
 	// they are dragging; do not try to do any additional work
-	if (!mouseIsPressed)
+	if (!mouseIsPressed && !vx && !vy)
 		redraw = stl.do_work(camera, 200);
 }
