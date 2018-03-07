@@ -267,14 +267,15 @@ function intercept_lines(p0,p1,p2,p3)
 // Process a segment against a list of triangles
 // returns a list of segments that are visible
 // TODO: best if triangles is sorted by z depth
+// TODO: figure out a better representation for the screen map
 function hidden_wire(s, screen_map)
 {
 	let segments = [];
 
-	let min_key_x = Math.trunc(Math.min(s.p0.x, s.p1.x) / key_scale);
-	let min_key_y = Math.trunc(Math.min(s.p0.y, s.p1.y) / key_scale);
-	let max_key_x = Math.trunc(Math.max(s.p0.x, s.p1.x) / key_scale);
-	let max_key_y = Math.trunc(Math.max(s.p0.y, s.p1.y) / key_scale);
+	let min_key_x = Math.trunc(Math.min(s.p0.x, s.p1.x) / stl_key2d_scale);
+	let min_key_y = Math.trunc(Math.min(s.p0.y, s.p1.y) / stl_key2d_scale);
+	let max_key_x = Math.trunc(Math.max(s.p0.x, s.p1.x) / stl_key2d_scale);
+	let max_key_y = Math.trunc(Math.max(s.p0.y, s.p1.y) / stl_key2d_scale);
 
 	for(let x = min_key_x ; x <= max_key_x ; x++)
 	{

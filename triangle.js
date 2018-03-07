@@ -153,7 +153,7 @@ function Triangle(p0, p1, p2)
 		// that potentially match the point
 		for(p of this.model)
 		{
-			for(t of triangle_map[stl_key(p)])
+			for(t of triangle_map[stl_key3d(p)])
 			{
 				let edges = this.coplanar_check(t);
 				if (edges == 0)
