@@ -27,8 +27,8 @@ function Camera(eye,lookat,up,fov)
 	this.up = up;
 	this.fov = fov;
 	this.generation = 0;
-	this.width = 1024;
-	this.height = 1024;
+	this.width = width;
+	this.height = height;
 
 	// project a point from model space to camera space
 	this.project = function(v_in)

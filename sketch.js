@@ -12,11 +12,10 @@
 
 let x_offset;
 let y_offset;
-let z_scale = 10;
+let z_scale = 1;
 
 let stl = false;
-let camera, eye, lookat, up;
-let fov;
+let camera;
 let redraw = false;
 let reproject = false;
 let vx = 0;
@@ -52,10 +51,10 @@ function setup()
 		reproject = true;
 	});
 
-	eye = createVector(0,0,1000);
-	lookat = createVector(0,0,0);
-	up = createVector(0,1,0);
-	fov = 80;
+	let eye = createVector(0,0,100);
+	let lookat = createVector(0,0,0);
+	let up = createVector(0,1,0);
+	let fov = 80;
 	x_offset = width/2;
 	y_offset = height/2;
 	camera = new Camera(eye,lookat,up,fov);
@@ -80,26 +79,26 @@ function v3_line(p0,p1)
 function keyReleased()
 {
 	vx = vy = 0;
+	move_eye = false;
 }
 
 function keyPressed()
 {
 console.log(keyCode);
+	if (keyCode == SHIFT)
+		move_eye = true;
+
 	if (keyCode == LEFT_ARROW)
 		vx = -10;
 	else
 	if (keyCode == RIGHT_ARROW)
 		vx = +10;
-	else
-		vx = 0;
 
 	if (keyCode == UP_ARROW)
 		vy = +10;
 	else
 	if (keyCode == DOWN_ARROW)
 		vy = -10;
-	else
-		vy = 0;
 
 	//return false;
 }
@@ -112,15 +111,27 @@ function draw()
 
 	if (mouseIsPressed)
 	{
-		camera.eye.x = mouseX - width/2;
-		camera.eye.y = height/2 - mouseY;
+		if (move_eye)
+		{
+			camera.eye.x = mouseX - width/2;
+			camera.eye.y = height/2 - mouseY;
+		} else {
+			camera.lookat.x = mouseX - width/2;
+			camera.lookat.y = height/2 - mouseY;
+		}
 
 		reproject = true;
 	}
 	if (vx != 0 || vy != 0)
 	{
-		camera.eye.x += vx;
-		camera.eye.y += vy;
+		if (move_eye)
+		{
+			camera.eye.x += vx;
+			camera.eye.y += vy;
+		} else {
+			camera.lookat.x += vx;
+			camera.lookat.y += vy;
+		}
 		reproject = true;
 	}
 
@@ -150,13 +161,13 @@ function draw()
 	line(0,0,10,0);
 
 	// draw all of our in-processing segments lightly
-	strokeWeight(0.1);
+	strokeWeight(1);
 	stroke(255,0,0,20);
 	for(s of stl.segments)
 		v3_line(s.p0, s.p1);
 
 	// Draw all of our visible segments sharply
-	strokeWeight(0.1);
+	strokeWeight(0.5);
 	stroke(0,0,0,255);
 	for(s of stl.hidden_segments)
 		v3_line(s.p0, s.p1);

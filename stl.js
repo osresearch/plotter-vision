@@ -5,7 +5,7 @@
  * and doing hidden-line removal.
  */
 
-const stl_key2d_scale = 1;
+const stl_key2d_scale = 10;
 
 function stl_key3d(p)
 {
