@@ -147,10 +147,15 @@ function STL(rawbytes_arraybuffer)
 			return false;
 
 		console.log("coplanar processing " + this.done_coplanar + "/" +num_triangles);
-		for(let i = 0 ; i < 4096 && this.done_coplanar < num_triangles; i++)
+		let start_time = performance.now();
+
+		while(this.done_coplanar < num_triangles)
 		{
 			let t = this.triangles[this.done_coplanar++];
 			t.coplanar_update(this.model_map)
+
+			if (performance.now() - start_time > ms)
+				break;
 		}
 
 		this.project(camera);
@@ -166,16 +171,23 @@ function STL(rawbytes_arraybuffer)
 		if (num_segments == 0)
 			return false;
 
+		let start_time = performance.now();
+
 		// coplanar processing is done; find the hidden
 		// line segments if they are not dragging
-		console.log("hidden processing " + num_segments);
+		let count = 0;
 
-		for(let i = 0 ; i < 1024 && this.segments.length != 0 ; i++)
+		while(this.segments.length != 0)
 		{
 			let s = this.segments.shift();
 			let new_segments = hidden_wire(s, this.screen_map);
 			this.hidden_segments = this.hidden_segments.concat(new_segments);
+			count++;
+
+			if (performance.now() - start_time > ms)
+				break;
 		}
+		console.log("hidden processing " + count + " segments in " + int(performance.now() - start_time) + " ms");
 
 		return true;
 	}

@@ -130,5 +130,5 @@ function draw()
 
 	// they are dragging; do not try to do any additional work
 	if (!mouseIsPressed)
-		redraw = stl.do_work(camera, 100);
+		redraw = stl.do_work(camera, 200);
 }
