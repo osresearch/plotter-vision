@@ -13,5 +13,32 @@
     <script src="sketch.js"></script>
   </head>
   <body>
+<form id="uploadForm">
+<input id="fileUpload" name="files[]" type="file"/>
+</form>
+
+<script>
+document.forms['uploadForm'].elements['fileUpload'].onchange = (evt) => {
+	const reader = new FileReader();
+	console.log("upload changed");
+	reader.onload = (evt) => {
+		if (evt.target.readyState != 2)
+			return;
+		if (evt.target.error) {
+			console.log("ERROR READING FILE");
+			return;
+		}
+
+		const content = evt.target.result;
+		const raw = new Uint8Array(content);
+		console.log("content:", raw);
+		stl = new STL(raw);
+		console.log("new stl:", stl);
+		reproject = true;
+	};
+
+	reader.readAsArrayBuffer(evt.target.files[0]);
+};
+</script>
   </body>
 </html>

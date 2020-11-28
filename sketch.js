@@ -14,12 +14,13 @@ let x_offset;
 let y_offset;
 let z_scale = 1;
 
-let stl = false;
+stl = false;
 let camera;
 let redraw = false;
-let reproject = false;
+reproject = false;
 let vx = 0;
 let vy = 0;
+let move_eye = false;
 
 
 
