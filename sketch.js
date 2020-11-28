@@ -43,7 +43,11 @@ function loadBytes(file, callback) {
 
 function setup()
 {
-	createCanvas(windowWidth-10, windowHeight-10); // WEBGL?
+	let canvas = createCanvas(windowWidth-10, windowHeight-10); // WEBGL?
+
+	// Move the canvas so it’s inside our <div id="sketch-holder">.
+	canvas.parent('sketch-holder');
+
 	//createCanvas(1000, 1080); // WEBGL?
 	background(255);
 
@@ -110,8 +114,9 @@ function draw()
 	if (!stl)
 		return;
 
-	if (mouseIsPressed)
+	if (mouseIsPressed && mouseY >= 0)
 	{
+		console.log(mouseX, mouseY);
 		if (move_eye)
 		{
 			camera.eye.x = mouseX - width/2;

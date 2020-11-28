@@ -15,7 +15,11 @@
   <body>
 <form id="uploadForm">
 <input id="fileUpload" name="files[]" type="file"/>
+<input id="fileDownload" type="button" value="Download SVG" onclick="download()"/>
 </form>
+<div id="sketch-holder">
+      <!-- Our sketch will go here! -->
+</div>
 
 <script>
 document.forms['uploadForm'].elements['fileUpload'].onchange = (evt) => {
@@ -39,6 +43,28 @@ document.forms['uploadForm'].elements['fileUpload'].onchange = (evt) => {
 
 	reader.readAsArrayBuffer(evt.target.files[0]);
 };
+
+function download()
+{	
+	const path = stl.hidden_segments.map(x =>
+		"M " + x.p0.x + "," + x.p0.y + " L " + x.p1.x + "," + x.p1.y
+	).join('\n');
+
+	let svg = "<svg><path d='\n";
+	svg += path;
+	svg += "' style='stroke:#ff0000;stroke-width:1'/></svg>";
+
+	svg = encodeURIComponent(svg);
+
+	var element = document.createElement('a');
+	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + svg);
+	element.setAttribute('download', "hiddenwire.svg");
+
+	element.style.display = 'none';
+	document.body.appendChild(element);
+	element.click();
+	document.body.removeChild(element);
+}
 </script>
   </body>
 </html>
