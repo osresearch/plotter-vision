@@ -20,10 +20,23 @@ let redraw = false;
 reproject = false;
 let vx = 0;
 let vy = 0;
+let vz = 0;
 let last_x = 0;
 let last_y = 0;
 let move_eye = false;
 
+let camera_psi = 0;
+let camera_theta = 0;
+let camera_radius = 100;
+
+
+function computeEye()
+{
+	camera.eye.x = camera_radius * Math.sin(camera_theta) * Math.sin(camera_psi);
+	camera.eye.y = camera_radius * Math.cos(camera_theta);
+	camera.eye.z = camera_radius * Math.sin(camera_theta) * Math.cos(camera_psi);
+	camera.update_matrix();
+}
 
 
 
@@ -45,7 +58,7 @@ function loadBytes(file, callback) {
 
 function setup()
 {
-	let canvas = createCanvas(windowWidth-10, windowHeight-10); // WEBGL?
+	let canvas = createCanvas(windowWidth-10, windowHeight-30); // WEBGL?
 
 	// Move the canvas so it’s inside our <div id="sketch-holder">.
 	canvas.parent('sketch-holder');
@@ -58,13 +71,19 @@ function setup()
 		reproject = true;
 	});
 
-	let eye = createVector(0,0,100);
+	vx = vy = vz = 0;
+	camera_theta = camera_psi = 0.01;
+	camera_radius = 100;
+
+	let eye = createVector(0,0,camera_radius);
 	let lookat = createVector(0,0,0);
 	let up = createVector(0,1,0);
 	let fov = 80;
 	x_offset = width/2;
 	y_offset = height/2;
 	camera = new Camera(eye,lookat,up,fov);
+
+	computeEye();
 }
 
 
@@ -85,7 +104,7 @@ function v3_line(p0,p1)
 
 function keyReleased()
 {
-	vx = vy = 0;
+	vx = vy = vz = 0;
 	move_eye = false;
 }
 
@@ -102,10 +121,10 @@ console.log(keyCode);
 		vx = +10;
 
 	if (keyCode == UP_ARROW)
-		vy = +10;
+		vz = -10;
 	else
 	if (keyCode == DOWN_ARROW)
-		vy = -10;
+		vz = +10;
 
 	//return false;
 }
@@ -114,6 +133,11 @@ function mousePressed()
 {
 	last_x = mouseX;
 	last_y = mouseY;
+}
+
+function mouseWheel(event)
+{
+	vz = event.delta * 0.1;
 }
 
 
@@ -129,27 +153,34 @@ function draw()
 		last_x = mouseX;
 		last_y = mouseY;
 	}
-	if (vx != 0 || vy != 0)
+	if (vx != 0 || vy != 0 || vz != 0)
 	{
+		camera_radius += vz;
+
 		if (move_eye)
 		{
-			camera.eye.x += vx;
-			camera.eye.y += vy;
-		} else {
+			// rotate the camera position in a circle around
+			// the object
 			camera.lookat.x += vx;
 			camera.lookat.y += vy;
+		} else {
+			camera_psi += vx * 0.01;
+			camera_theta += vy * 0.01;
+
+			computeEye();
+
 		}
 
 		reproject = true;
 		vx = 0;
 		vy = 0;
+		vz = 0;
 	}
 
 
 	if(reproject)
 	{
 		reproject = false;
-		camera.update_matrix();
 		redraw = true;
 		stl.project(camera);
 	}
@@ -175,6 +206,21 @@ function draw()
 	stroke(255,0,0,20);
 	for(s of stl.segments)
 		v3_line(s.p0, s.p1);
+	if (stl.segments.length != 0)
+	{
+		// draw an axis marker
+		const origin = camera.project({x:0, y:0, z:0});
+		const xaxis = camera.project({x:10, y:0, z:0});
+		const yaxis = camera.project({x:0, y:10, z:0});
+		const zaxis = camera.project({x:0, y:0, z:10});
+		strokeWeight(10);
+		stroke(255,0,0);
+		if (xaxis) v3_line(origin, xaxis);
+		stroke(0,255,0);
+		if (yaxis) v3_line(origin, yaxis);
+		stroke(0,0,255);
+		if (zaxis) v3_line(origin, zaxis);
+	}
 
 	// Draw all of our visible segments sharply
 	strokeWeight(0.5);
