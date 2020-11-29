@@ -20,6 +20,8 @@ let redraw = false;
 reproject = false;
 let vx = 0;
 let vy = 0;
+let last_x = 0;
+let last_y = 0;
 let move_eye = false;
 
 
@@ -108,6 +110,12 @@ console.log(keyCode);
 	//return false;
 }
 
+function mousePressed()
+{
+	last_x = mouseX;
+	last_y = mouseY;
+}
+
 
 function draw()
 {
@@ -116,17 +124,10 @@ function draw()
 
 	if (mouseIsPressed && mouseY >= 0)
 	{
-		console.log(mouseX, mouseY);
-		if (move_eye)
-		{
-			camera.eye.x = mouseX - width/2;
-			camera.eye.y = height/2 - mouseY;
-		} else {
-			camera.lookat.x = mouseX - width/2;
-			camera.lookat.y = height/2 - mouseY;
-		}
-
-		reproject = true;
+		vx = mouseX - last_x;
+		vy = mouseY - last_y;
+		last_x = mouseX;
+		last_y = mouseY;
 	}
 	if (vx != 0 || vy != 0)
 	{
@@ -138,7 +139,10 @@ function draw()
 			camera.lookat.x += vx;
 			camera.lookat.y += vy;
 		}
+
 		reproject = true;
+		vx = 0;
+		vy = 0;
 	}
 
 
