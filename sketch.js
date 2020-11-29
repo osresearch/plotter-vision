@@ -23,7 +23,7 @@ let vy = 0;
 let vz = 0;
 let last_x = 0;
 let last_y = 0;
-let move_eye = false;
+let move_lookat = false;
 
 let camera_psi = 0;
 let camera_theta = 0;
@@ -33,8 +33,9 @@ let camera_radius = 100;
 function computeEye()
 {
 	camera.eye.x = camera_radius * Math.sin(camera_theta) * Math.sin(camera_psi);
-	camera.eye.y = camera_radius * Math.cos(camera_theta);
-	camera.eye.z = camera_radius * Math.sin(camera_theta) * Math.cos(camera_psi);
+	camera.eye.y = camera_radius * Math.sin(camera_theta) * Math.cos(camera_psi);
+	camera.eye.z = camera_radius * Math.cos(camera_theta);
+	camera.eye.add(camera.lookat);
 	camera.update_matrix();
 }
 
@@ -75,9 +76,9 @@ function setup()
 	camera_theta = camera_psi = 0.01;
 	camera_radius = 100;
 
-	let eye = createVector(0,0,camera_radius);
+	let eye = createVector(0,camera_radius,0);
 	let lookat = createVector(0,0,0);
-	let up = createVector(0,1,0);
+	let up = createVector(0,0,1);
 	let fov = 80;
 	x_offset = width/2;
 	y_offset = height/2;
@@ -102,17 +103,82 @@ function v3_line(p0,p1)
 }
 
 
+function drawAxis(camera, lookat)
+{
+	// draw an axis marker at the look-at point
+	const origin = camera.project(lookat)
+	const xaxis = camera.project(new p5.Vector(10,0,0).add(lookat));
+	const yaxis = camera.project(new p5.Vector(0,10,0).add(lookat));
+	const zaxis = camera.project(new p5.Vector(0,0,10).add(lookat));
+	strokeWeight(10);
+
+	if (!xaxis || !yaxis || !zaxis)
+	{
+		// draw them anyway, since no good ordering is possible
+		stroke(255,0,0);
+		if (xaxis) v3_line(origin, xaxis);
+		stroke(0,255,0);
+		if (yaxis) v3_line(origin, yaxis);
+		stroke(0,0,255);
+		if (zaxis) v3_line(origin, zaxis);
+		return;
+	}
+
+	// draw the axis lines in back-to-front order
+	const xd = xaxis.z;
+	const yd = yaxis.z;
+	const zd = zaxis.z;
+	if (xd > yd && yd > zd)
+	{
+		stroke(255,0,0); v3_line(origin, xaxis);
+		stroke(0,255,0); v3_line(origin, yaxis);
+		stroke(0,0,255); v3_line(origin, zaxis);
+	} else
+	if (xd > zd && zd > yd)
+	{
+		stroke(255,0,0); v3_line(origin, xaxis);
+		stroke(0,0,255); v3_line(origin, zaxis);
+		stroke(0,255,0); v3_line(origin, yaxis);
+	} else
+	if (yd > xd && xd > zd)
+	{
+		stroke(0,255,0); v3_line(origin, yaxis);
+		stroke(255,0,0); v3_line(origin, xaxis);
+		stroke(0,0,255); v3_line(origin, zaxis);
+	} else
+	if (yd > zd && zd > xd)
+	{
+		stroke(0,255,0); v3_line(origin, yaxis);
+		stroke(0,0,255); v3_line(origin, zaxis);
+		stroke(255,0,0); v3_line(origin, xaxis);
+	} else
+	if (zd > xd && xd > yd)
+	{
+		stroke(0,0,255); v3_line(origin, zaxis);
+		stroke(255,0,0); v3_line(origin, xaxis);
+		stroke(0,255,0); v3_line(origin, yaxis);
+	} else
+	if (zd > yd && yd > xd)
+	{
+		stroke(0,0,255); v3_line(origin, zaxis);
+		stroke(0,255,0); v3_line(origin, yaxis);
+		stroke(255,0,0); v3_line(origin, xaxis);
+	} else {
+		// wtf how did we end up here?
+	}
+}
+
 function keyReleased()
 {
 	vx = vy = vz = 0;
-	move_eye = false;
+	move_lookat = false;
 }
 
 function keyPressed()
 {
 console.log(keyCode);
 	if (keyCode == SHIFT)
-		move_eye = true;
+		move_lookat = true;
 
 	if (keyCode == LEFT_ARROW)
 		vx = -10;
@@ -157,20 +223,17 @@ function draw()
 	{
 		camera_radius += vz;
 
-		if (move_eye)
+		if (move_lookat)
 		{
-			// rotate the camera position in a circle around
-			// the object
 			camera.lookat.x += vx;
-			camera.lookat.y += vy;
+			camera.lookat.z += vy;
 		} else {
 			camera_psi += vx * 0.01;
 			camera_theta += vy * 0.01;
 
-			computeEye();
-
 		}
 
+		computeEye();
 		reproject = true;
 		vx = 0;
 		vy = 0;
@@ -195,32 +258,15 @@ function draw()
 	translate(x_offset, y_offset);
 	scale(z_scale);
 
-	// draw an origin
-	strokeWeight(0.1);
-	stroke(0,0,255,40);
-	line(0,0,0,20);
-	line(0,0,10,0);
-
 	// draw all of our in-processing segments lightly
 	strokeWeight(1);
 	stroke(255,0,0,20);
 	for(s of stl.segments)
 		v3_line(s.p0, s.p1);
+
+	// if there are in process ones, draw an XYZ axis at the lookat
 	if (stl.segments.length != 0)
-	{
-		// draw an axis marker
-		const origin = camera.project({x:0, y:0, z:0});
-		const xaxis = camera.project({x:10, y:0, z:0});
-		const yaxis = camera.project({x:0, y:10, z:0});
-		const zaxis = camera.project({x:0, y:0, z:10});
-		strokeWeight(10);
-		stroke(255,0,0);
-		if (xaxis) v3_line(origin, xaxis);
-		stroke(0,255,0);
-		if (yaxis) v3_line(origin, yaxis);
-		stroke(0,0,255);
-		if (zaxis) v3_line(origin, zaxis);
-	}
+		drawAxis(camera, camera.lookat);
 
 	// Draw all of our visible segments sharply
 	strokeWeight(0.5);
