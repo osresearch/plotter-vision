@@ -91,12 +91,14 @@ function setup()
 		reproject = true;
 	});
 
+	// initial viewport
 	vx = vy = vz = 0;
-	camera_theta = camera_psi = 0.01;
-	camera_radius = 100;
+	camera_theta = 70 * Math.PI / 180;
+	camera_psi = -150 * Math.PI / 180;
+	camera_radius = 170;
 
 	let eye = createVector(0,camera_radius,0);
-	let lookat = createVector(0,0,0);
+	let lookat = createVector(0,0,00);
 	let up = createVector(0,0,1);
 	let fov = 80;
 	x_offset = width/2;
@@ -274,15 +276,16 @@ function draw()
 	background(255);
 
 	strokeWeight(1);
-	stroke(120,120,250);
+	stroke(200,200,250);
 	textSize(12);
-	//text("theta=" + int(camera_theta * 180 / Math.PI), 10, 30);
-	//text("  psi=" + int(camera_psi * 180 / Math.PI), 10, 50);
-	//text("    r=" + int(camera_radius), 10, 70);
 
-	text("camera=" + int(camera.eye.x) + "," + int(camera.eye.y) + "," + int(camera.eye.z), 10, 30);
-	text("lookat=" + int(camera.lookat.x) + "," + int(camera.lookat.y) + "," + int(camera.lookat.z), 10, 50);
 
+	text("camera " + int(camera.eye.x) + "," + int(camera.eye.y) + "," + int(camera.eye.z), 10, 30);
+	text("lookat " + int(camera.lookat.x) + "," + int(camera.lookat.y) + "," + int(camera.lookat.z), 10, 50);
+
+	text("theta " + int(camera_theta * 180 / Math.PI), 10, 100);
+	text("  psi " + int(camera_psi * 180 / Math.PI), 10, 120);
+	text("    r " + int(camera_radius), 10, 140);
 
 	push();
 	translate(x_offset, y_offset);
