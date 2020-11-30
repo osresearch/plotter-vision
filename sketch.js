@@ -13,10 +13,11 @@
 let x_offset;
 let y_offset;
 let z_scale = 1;
+dark_mode = true;
 
 stl = false;
 let camera;
-let redraw = false;
+redraw = false;
 reproject = false;
 let vx = 0;
 let vy = 0;
@@ -84,7 +85,7 @@ function setup()
 	canvas.parent('sketch-holder');
 
 	//createCanvas(1000, 1080); // WEBGL?
-	background(255);
+	background(0);
 
 	loadBytes("test.stl", function(d){
 		stl = new STL(d);
@@ -273,10 +274,16 @@ function draw()
 	if (!stl || !redraw)
 		return;
 
-	background(255);
+	if (dark_mode)
+	{
+		background(0);
+		fill(0,0,250);
+	} else {
+		background(255);
+		fill(100,100,250);
+	}
 
-	strokeWeight(1);
-	stroke(200,200,250);
+	noStroke();
 	textSize(12);
 
 
@@ -293,7 +300,7 @@ function draw()
 
 	// draw all of our in-processing segments lightly
 	strokeWeight(1);
-	stroke(255,0,0,20);
+	stroke(255,0,0,80);
 	for(s of stl.segments)
 		v3_line(s.p0, s.p1);
 
@@ -303,7 +310,11 @@ function draw()
 
 	// Draw all of our visible segments sharply
 	strokeWeight(0.5);
-	stroke(0,0,0,255);
+	if (dark_mode)
+		stroke(255,255,255);
+	else
+		stroke(0,0,0);
+
 	for(s of stl.hidden_segments)
 		v3_line(s.p0, s.p1);
 

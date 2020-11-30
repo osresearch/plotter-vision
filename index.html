@@ -21,6 +21,7 @@
   </head>
   <body>
 <form id="uploadForm">
+<input type="button" value="Light/Dark" onclick="dark_mode=!dark_mode; redraw=true;" />
 <input id="fileUpload" name="files[]" style="display:none;" type="file"/>
 <input type="button" id="loadFileXml" value="Upload STL" onclick="document.getElementById('fileUpload').click();" />
 <input id="fileDownload" type="button" value="Download SVG" onclick="download()"/>
