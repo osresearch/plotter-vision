@@ -221,9 +221,11 @@ function mouseWheel(event)
  
 function windowResized() {
 	resizeCanvas(windowWidth-10, windowHeight-30);
+	camera.width = width;
+	camera.height = height;
 	x_offset = width/2;
 	y_offset = height/2;
-	redraw = true;
+	reproject = true;
 }
 
 function draw()
