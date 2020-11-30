@@ -11,6 +11,9 @@ const tri_clipped = 3; // occlusion and either p0 or p1 has been updated
 const tri_split = 4; //  occlusion and p0/p1 have been updated and p2/p3 have been created
 const EPS = 0.00001;
 
+let p_max = null;
+let p_min = null;
+
 function occlude(t,s)
 {
 	// if this triangle is not visible, then we don't process it
@@ -24,8 +27,11 @@ function occlude(t,s)
 	if (seg_len < 0.5)
 		return [tri_hidden];
 
-	let p_max = v3max(s.p0,s.p1);
-	let p_min = v3min(s.p0,s.p1);
+	if (!p_max) p_max = createVector();
+	if (!p_min) p_min = createVector();
+
+	v3max(p_max, s.p0,s.p1);
+	v3min(p_min, s.p0,s.p1);
 
 	// if the segment max z is closer than the minimum
 	// z of the triangle, then this triangle can not occlude

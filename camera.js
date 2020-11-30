@@ -31,7 +31,7 @@ function Camera(eye,lookat,up,fov)
 	this.height = height;
 
 	// project a point from model space to camera space
-	this.project = function(v_in)
+	this.project = function(v_in,v_out=null)
 	{
 		let v = [v_in.x, v_in.y, v_in.z, 1];
 		let p = [0,0,0,0];
@@ -45,11 +45,17 @@ function Camera(eye,lookat,up,fov)
 		if (p[2] <= 0)
 			return;
 
-		return createVector(
-			p[0] / p[3],
-			p[1] / p[3],
-			p[2],
-		);
+		let x = p[0] / p[3];
+		let y = p[1] / p[3];
+		let z = p[2];
+		if (!v_out)
+			return createVector(x,y,z);
+
+		// update in place to avoid an allocation
+		v_out.x = x;
+		v_out.y = y;
+		v_out.z = z;
+		return v_out;
 	}
 
 	// Update the camera projection matrix with eye/lookat/fov

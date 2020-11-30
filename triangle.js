@@ -8,22 +8,18 @@ function tri_normal(p0,p1,p2)
 
 
 
-function v3min(v0,v1)
+function v3min(out,v0,v1)
 {
-	return createVector(
-		Math.min(v0.x, v1.x),
-		Math.min(v0.y, v1.y),
-		Math.min(v0.z, v1.z),
-	);
+	out.x = Math.min(v0.x, v1.x);
+	out.y = Math.min(v0.y, v1.y);
+	out.z = Math.min(v0.z, v1.z);
 }
 
-function v3max(v0,v1)
+function v3max(out,v0,v1)
 {
-	return createVector(
-		Math.max(v0.x, v1.x),
-		Math.max(v0.y, v1.y),
-		Math.max(v0.z, v1.z),
-	);
+	out.x = Math.max(v0.x, v1.x);
+	out.y = Math.max(v0.y, v1.y);
+	out.z = Math.max(v0.z, v1.z);
 }
 
 function close_enough(p0,p1)
@@ -51,6 +47,9 @@ function Triangle(p0, p1, p2)
 
 	this.model = [p0,p1,p2];
 	this.normal = tri_normal(p0,p1,p2);
+	this.screen = [ createVector(), createVector(), createVector() ];
+	this.min = createVector();
+	this.max = createVector();
 
 	// projection into the screen space and the camera generation
 	// counter that was used to compute it
@@ -74,9 +73,9 @@ function Triangle(p0, p1, p2)
 		this.invisible = true; // assume it will be discarded
 		this.screen = [];
 
-		let s0 = camera.project(this.model[0]);
-		let s1 = camera.project(this.model[1]);
-		let s2 = camera.project(this.model[2]);
+		let s0 = camera.project(this.model[0], this.screen[0]);
+		let s1 = camera.project(this.model[1], this.screen[1]);
+		let s2 = camera.project(this.model[2], this.screen[2]);
 
 		// if any of them are behind us or off screen,
 		// mark this triangle as invisible
@@ -103,8 +102,14 @@ function Triangle(p0, p1, p2)
 		this.invisible = false;
 
 		// cache the min/max coordinates for a bounding box
-		this.min = v3min(v3min(s0,s1),s2);
-		this.max = v3max(v3max(s0,s1),s2);
+		//this.min = v3min(v3min(s0,s1),s2);
+		//this.max = v3max(v3max(s0,s1),s2);
+		v3min(this.min, s0, s1);
+		v3min(this.min, this.min, s2);
+
+		v3max(this.max, s0, s1);
+		v3max(this.max, this.max, s2);
+
 		return true;
 	};
 
