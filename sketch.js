@@ -80,6 +80,8 @@ function loadBytes(file, callback) {
 function setup()
 {
 	let canvas = createCanvas(windowWidth-10, windowHeight-30); // WEBGL?
+	x_offset = width/2;
+	y_offset = height/2;
 
 	// Move the canvas so it’s inside our <div id="sketch-holder">.
 	canvas.parent('sketch-holder');
@@ -102,8 +104,6 @@ function setup()
 	let lookat = createVector(0,0,00);
 	let up = createVector(0,0,1);
 	let fov = 80;
-	x_offset = width/2;
-	y_offset = height/2;
 	camera = new Camera(eye,lookat,up,fov);
 
 	computeEye();
@@ -113,15 +113,6 @@ function setup()
 function v3_line(p0,p1)
 {
 	line(p0.x, -p0.y, p1.x, -p1.y);
-/*
-	push();
-	strokeWeight(0.1);
-	stroke(0,0,255,10);
-	textSize(1.5);
-	text(int(p0.z), p0.x, -p0.y);
-	text(int(p1.z), p1.x, -p1.y);
-	pop();
-*/
 }
 
 
@@ -227,7 +218,13 @@ function mouseWheel(event)
 {
 	vz = event.delta * 0.1;
 }
-
+ 
+function windowResized() {
+	resizeCanvas(windowWidth-10, windowHeight-30);
+	x_offset = width/2;
+	y_offset = height/2;
+	redraw = true;
+}
 
 function draw()
 {
