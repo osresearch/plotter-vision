@@ -32,9 +32,28 @@ let camera_radius = 100;
 
 function computeEye()
 {
+	// normalize theta and psi
+	if (camera_theta < -Math.PI)
+		camera_theta += 2 * Math.PI;
+	else
+	if (camera_theta > +Math.PI)
+		camera_theta -= 2 * Math.PI;
+
+	if (camera_psi < -Math.PI)
+		camera_psi += 2 * Math.PI;
+	else
+	if (camera_psi > +Math.PI)
+		camera_psi -= 2 * Math.PI;
+
 	camera.eye.x = camera_radius * Math.sin(camera_theta) * Math.sin(camera_psi);
 	camera.eye.y = camera_radius * Math.sin(camera_theta) * Math.cos(camera_psi);
 	camera.eye.z = camera_radius * Math.cos(camera_theta);
+
+	if (camera_theta < 0)
+		camera.up.z = -1;
+	else
+		camera.up.z = +1;
+
 	camera.eye.add(camera.lookat);
 	camera.update_matrix();
 }
@@ -229,7 +248,7 @@ function draw()
 			camera.lookat.z += vy;
 		} else {
 			camera_psi += vx * 0.01;
-			camera_theta += vy * 0.01;
+			camera_theta -= vy * 0.01;
 
 		}
 
@@ -253,6 +272,17 @@ function draw()
 		return;
 
 	background(255);
+
+	strokeWeight(1);
+	stroke(120,120,250);
+	textSize(12);
+	//text("theta=" + int(camera_theta * 180 / Math.PI), 10, 30);
+	//text("  psi=" + int(camera_psi * 180 / Math.PI), 10, 50);
+	//text("    r=" + int(camera_radius), 10, 70);
+
+	text("camera=" + int(camera.eye.x) + "," + int(camera.eye.y) + "," + int(camera.eye.z), 10, 30);
+	text("lookat=" + int(camera.lookat.x) + "," + int(camera.lookat.y) + "," + int(camera.lookat.z), 10, 50);
+
 
 	push();
 	translate(x_offset, y_offset);
