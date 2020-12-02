@@ -282,7 +282,7 @@ function draw()
 	if (dark_mode)
 	{
 		background(0);
-		fill(25);
+		fill(15);
 	} else {
 		background(255);
 		fill(251);
