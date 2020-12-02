@@ -273,18 +273,24 @@ function draw()
 	if (!stl || !redraw)
 		return;
 
+	noStroke();
+
 	if (dark_mode)
 	{
 		background(0);
-		fill(0,0,250);
+		fill(25);
 	} else {
 		background(255);
-		fill(100,100,250);
+		fill(251);
 	}
 
-	noStroke();
-	textSize(12);
+	textSize(128);
+	textAlign(RIGHT, BOTTOM);
+	text("plotter.vision", width, height);
 
+	fill(dark_mode ? 150 : 80);
+	textSize(12);
+	textAlign(LEFT, BOTTOM);
 
 	text("camera " + int(camera.eye.x) + "," + int(camera.eye.y) + "," + int(camera.eye.z), 10, 30);
 	text("lookat " + int(camera.lookat.x) + "," + int(camera.lookat.y) + "," + int(camera.lookat.z), 10, 50);
