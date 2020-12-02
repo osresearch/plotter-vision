@@ -5,7 +5,7 @@
  * and doing hidden-line removal.
  */
 
-const stl_key2d_scale = 10;
+const stl_key2d_scale = 16;
 
 function stl_key3d(p)
 {
@@ -45,6 +45,8 @@ function STL(rawbytes_arraybuffer)
 		//return;
 	}
 
+	// trade some accuracy for faster rendering and better drawing
+	this.min_length = 5;
 	this.triangles = [];
 
 	for (let offset = 84 ; offset < len ; offset += 50)
@@ -108,11 +110,11 @@ function STL(rawbytes_arraybuffer)
 		let t1 = t.screen[1];
 		let t2 = t.screen[2];
 
-		if ((t.coplanar & 1) == 0 && dist2(t0,t1) > 1)
+		if ((t.coplanar & 1) == 0 && dist2(t0,t1) > this.min_length)
 			this.segments.push({ p0: t0, p1: t1 });
-		if ((t.coplanar & 2) == 0 && dist2(t1,t2) > 1)
+		if ((t.coplanar & 2) == 0 && dist2(t1,t2) > this.min_length)
 			this.segments.push({ p0: t1, p1: t2 });
-		if ((t.coplanar & 4) == 0 && dist2(t2,t0) > 1)
+		if ((t.coplanar & 4) == 0 && dist2(t2,t0) > this.min_length)
 			this.segments.push({ p0: t2, p1: t0 });
 
 

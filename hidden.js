@@ -24,7 +24,7 @@ function occlude(t,s)
 
 	// if the segment is too short in screen space we are done
 	let seg_len = dist2(s.p1, s.p0);
-	if (seg_len < 0.5)
+	if (seg_len < 1)
 		return [tri_hidden];
 
 	if (!p_max) p_max = createVector();
