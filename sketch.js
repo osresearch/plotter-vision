@@ -30,6 +30,8 @@ let camera_psi = 0;
 let camera_theta = 0;
 let camera_radius = 100;
 
+let start_time = 0;
+let tri_per_sec = 0;
 
 function computeEye()
 {
@@ -267,6 +269,8 @@ function draw()
 		reproject = false;
 		redraw = true;
 		stl.project(camera);
+		start_time = performance.now();
+		tri_per_sec = 0;
 	}
 
 	// if there are segments left to process, continue to force redraw
@@ -298,6 +302,13 @@ function draw()
 	text("theta " + int(camera_theta * 180 / Math.PI), 10, 100);
 	text("  psi " + int(camera_psi * 180 / Math.PI), 10, 120);
 	text("    r " + int(camera_radius), 10, 140);
+
+	if (stl.segments.length == 0)
+	{
+		if (tri_per_sec == 0)
+			tri_per_sec = int(stl.triangles.length * 1000 / (performance.now() - start_time));
+		text("tri/s " + tri_per_sec, 10, 180);
+	}
 
 	push();
 	translate(x_offset, y_offset);
