@@ -282,10 +282,10 @@ function draw()
 	if (dark_mode)
 	{
 		background(0);
-		fill(15);
+		fill(9);
 	} else {
 		background(255);
-		fill(251);
+		fill(253);
 	}
 
 	textSize(128);
