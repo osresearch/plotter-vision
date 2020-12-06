@@ -50,6 +50,8 @@ function Triangle(p0, p1, p2)
 	this.screen = [ createVector(), createVector(), createVector() ];
 	this.min = createVector();
 	this.max = createVector();
+	this.t1 = createVector();
+	this.t2 = createVector();
 
 	// projection into the screen space and the camera generation
 	// counter that was used to compute it
@@ -96,12 +98,9 @@ function Triangle(p0, p1, p2)
 			return false;
 
 		// after all that, the triangle is visible
-		//this.screen = [s0,s1,s2];
 		this.invisible = false;
 
 		// cache the min/max coordinates for a bounding box
-		//this.min = v3min(v3min(s0,s1),s2);
-		//this.max = v3max(v3max(s0,s1),s2);
 		v3min(this.min, s0, s1);
 		v3min(this.min, this.min, s2);
 
@@ -110,8 +109,10 @@ function Triangle(p0, p1, p2)
 
 		// compute the coordinates of the other two points,
 		// relative to the first screen coordinate point
-		this.t1 = p5.Vector.sub(s1, s0);
-		this.t2 = p5.Vector.sub(s2, s0);
+		this.t1.set(s1);
+		this.t2.set(s2);
+		this.t1.sub(s0);
+		this.t2.sub(s0);
 
 		return true;
 	};
@@ -147,7 +148,8 @@ function Triangle(p0, p1, p2)
 		// points 0 and 2 == edge 2
 		if (matches == 0b101) return 1 << 2;
 
-		// all three points match: we have a problem
+		// all three points match; this must be a duplicate
+		// triangle of some sort.
 		if (matches == 0b111)
 			console.log("three points match? " + this + " " + t);
 
