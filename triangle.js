@@ -41,6 +41,14 @@ function close_enough(p0,p1)
 	return true;
 }
 
+function onscreen(p, w, h)
+{
+	if (p.x < -w/2 || w/2 < p.x)
+		return false;
+	if (p.y < -h/2 || h/2 < p.y)
+		return false;
+	return true;
+}
 
 function Triangle(p0, p1, p2)
 {
@@ -77,18 +85,18 @@ function Triangle(p0, p1, p2)
 		let s1 = camera.project(this.model[1], this.screen[1]);
 		let s2 = camera.project(this.model[2], this.screen[2]);
 
-		// if any of them are behind us or off screen,
-		// mark this triangle as invisible
+		// if any of them are behind us, mark this triangle as invisible
 		if (!s0 || !s1 || !s2)
 			return false;
 
-		if((s0.x < -camera.width/2 || camera.width/2 < s0.x)
-		|| (s0.y < -camera.height/2 || camera.height/2 < s0.y)
-		|| (s1.x < -camera.width/2 || camera.width/2 < s1.x)
-		|| (s1.y < -camera.height/2 || camera.height/2 < s1.y)
-		|| (s2.x < -camera.width/2 || camera.width/2 < s2.x)
-		|| (s2.y < -camera.height/2 || camera.height/2 < s2.y)
-		)
+		// if all three points are off screen then discard this triangle
+		// but keep it if any one is on screen.
+		let w = camera.width;
+		let h = camera.height;
+
+		if (!onscreen(s0, w, h)
+		&&  !onscreen(s1, w, h)
+		&&  !onscreen(s2, w, h))
 			return false;
 
 		// compute the screen normal and mark this triangle
