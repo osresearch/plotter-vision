@@ -90,6 +90,7 @@ function STL(rawbytes_arraybuffer)
 		this.screen_map = {};
 		this.hidden_segments = [];
 		this.segments = [];
+		this.coplanar = [];
 
 		for(t of this.triangles)
 			this.project_triangle(t, camera);
@@ -110,12 +111,29 @@ function STL(rawbytes_arraybuffer)
 		let t1 = t.screen[1];
 		let t2 = t.screen[2];
 
-		if ((t.coplanar & 1) == 0 && dist2(t0,t1) > this.min_length)
-			this.segments.push({ p0: t0, p1: t1 });
-		if ((t.coplanar & 2) == 0 && dist2(t1,t2) > this.min_length)
-			this.segments.push({ p0: t1, p1: t2 });
-		if ((t.coplanar & 4) == 0 && dist2(t2,t0) > this.min_length)
-			this.segments.push({ p0: t2, p1: t0 });
+		if (dist2(t0,t1) > this.min_length)
+		{
+			if (t.coplanar & 1)
+				this.coplanar.push({ p0: t0, p1: t1 });
+			else
+				this.segments.push({ p0: t0, p1: t1 });
+		}
+
+		if (dist2(t1,t2) > this.min_length)
+		{
+			if (t.coplanar & 2)
+				this.coplanar.push({ p0: t1, p1: t2 });
+			else
+				this.segments.push({ p0: t1, p1: t2 });
+		}
+
+		if (dist2(t2,t0) > this.min_length)
+		{
+			if (t.coplanar & 4)
+				this.coplanar.push({ p0: t2, p1: t0 });
+			else
+				this.segments.push({ p0: t2, p1: t0 });
+		}
 
 
 		// build the screen map for all of the sectors

@@ -122,10 +122,10 @@ function drawAxis(camera, lookat)
 {
 	// draw an axis marker at the look-at point
 	const origin = camera.project(lookat)
-	const xaxis = camera.project(new p5.Vector(10,0,0).add(lookat));
-	const yaxis = camera.project(new p5.Vector(0,10,0).add(lookat));
-	const zaxis = camera.project(new p5.Vector(0,0,10).add(lookat));
-	strokeWeight(10);
+	const xaxis = camera.project(new p5.Vector(5,0,0).add(lookat));
+	const yaxis = camera.project(new p5.Vector(0,5,0).add(lookat));
+	const zaxis = camera.project(new p5.Vector(0,0,5).add(lookat));
+	strokeWeight(5);
 
 	if (!xaxis || !yaxis || !zaxis)
 	{
@@ -316,13 +316,19 @@ function draw()
 
 	// draw all of our in-processing segments lightly
 	strokeWeight(1);
-	stroke(255,0,0,80);
+	stroke(200,0,0);
 	for(s of stl.segments)
 		v3_line(s.p0, s.p1);
 
 	// if there are in process ones, draw an XYZ axis at the lookat
 	if (stl.segments.length != 0)
+	{
+		stroke(80,0,0,80);
+		for(s of stl.coplanar)
+			v3_line(s.p0, s.p1);
+
 		drawAxis(camera, camera.lookat);
+	}
 
 	// Draw all of our visible segments sharply
 	strokeWeight(0.5);
