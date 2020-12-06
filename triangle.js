@@ -24,7 +24,7 @@ function v3max(out,v0,v1)
 
 function close_enough(p0,p1)
 {
-	let eps = 0.001;
+	let eps = 0.0001;
 
 	let dx = p0.x - p1.x;
 	if (dx < -eps || eps < dx)
@@ -54,7 +54,6 @@ function Triangle(p0, p1, p2)
 	// projection into the screen space and the camera generation
 	// counter that was used to compute it
 	this.generation = 0;
-	this.screen = [];
 
 	// bitmask of which of the three edges are coplanar
 	// with other triangles
@@ -71,7 +70,6 @@ function Triangle(p0, p1, p2)
 	{
 		this.generation = generation;
 		this.invisible = true; // assume it will be discarded
-		this.screen = [];
 
 		let s0 = camera.project(this.model[0], this.screen[0]);
 		let s1 = camera.project(this.model[1], this.screen[1]);
@@ -98,7 +96,7 @@ function Triangle(p0, p1, p2)
 			return false;
 
 		// after all that, the triangle is visible
-		this.screen = [s0,s1,s2];
+		//this.screen = [s0,s1,s2];
 		this.invisible = false;
 
 		// cache the min/max coordinates for a bounding box
@@ -109,6 +107,11 @@ function Triangle(p0, p1, p2)
 
 		v3max(this.max, s0, s1);
 		v3max(this.max, this.max, s2);
+
+		// compute the coordinates of the other two points,
+		// relative to the first screen coordinate point
+		this.t1 = p5.Vector.sub(s1, s0);
+		this.t2 = p5.Vector.sub(s2, s0);
 
 		return true;
 	};
@@ -181,8 +184,8 @@ function Triangle(p0, p1, p2)
 	// of a triangle
 	this.bary_coord = function (p)
 	{
-		let t1 = p5.Vector.sub(this.screen[1], this.screen[0]);
-		let t2 = p5.Vector.sub(this.screen[2], this.screen[0]);
+		let t1 = this.t1;
+		let t2 = this.t2;
 		let px = p.x - this.screen[0].x;
 		let py = p.y - this.screen[0].y;
 
