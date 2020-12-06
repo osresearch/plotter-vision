@@ -14,18 +14,20 @@ const EPS = 0.00001;
 let p_max = null;
 let p_min = null;
 
+let new_segment = null;
+
 function occlude(t,s)
 {
 	// if this triangle is not visible, then we don't process it
 	// since the screen coordinates might be invalid,
 	// so this function should not have been called
 	if (t.invisible)
-		return [tri_no_occlusion];
+		return tri_no_occlusion;
 
 	// if the segment is too short in screen space we are done
 	let seg_len = dist2(s.p1, s.p0);
 	if (seg_len < 1)
-		return [tri_hidden];
+		return tri_hidden;
 
 	if (!p_max) p_max = createVector();
 	if (!p_min) p_min = createVector();
@@ -36,19 +38,19 @@ function occlude(t,s)
 	// if the segment max z is closer than the minimum
 	// z of the triangle, then this triangle can not occlude
 	if (p_max.z <= t.min.z)
-		return [tri_in_front];
+		return tri_in_front;
 
 	// perform a bounding box check for the triangle min/max.
 	// if the segment lies outside of this box and doesn't
 	// cross it, then there is no chance of occlusion
 	if (p_min.x < t.min.x && p_max.x < t.min.x)
-		return [tri_no_occlusion];
+		return tri_no_occlusion;
 	if (p_min.y < t.min.y && p_max.y < t.min.y)
-		return [tri_no_occlusion];
+		return tri_no_occlusion;
 	if (p_min.x > t.max.x && p_max.x > t.max.x)
-		return [tri_no_occlusion];
+		return tri_no_occlusion;
 	if (p_min.y > t.max.y && p_max.y > t.max.y)
-		return [tri_no_occlusion];
+		return tri_no_occlusion;
 
 	// there is a chance this segment crosses the triangle,
 	// so compute the barycentric coordinates in triangle space
@@ -63,19 +65,19 @@ function occlude(t,s)
 		// if the segment z is closer than the triangle z
 		// then the segment is in front of the triangle
 		if (s.p0.z < tp0.z && s.p1.z < tp1.z)
-			return [tri_no_occlusion];
+			return tri_no_occlusion;
 
 		// if the barycentric coord is 0 on the same edge
 		// for both points, then it is part of the original line
 		// we have to re-compute the c coordinate 
 		if (tp0.x < EPS && tp1.x < EPS)
-			return [tri_no_occlusion];
+			return tri_no_occlusion;
 		if (tp0.y < EPS && tp1.y < EPS)
-			return [tri_no_occlusion];
+			return tri_no_occlusion;
 		let c0 = 1.0 - tp0.x - tp0.y;
 		let c1 = 1.0 - tp1.x - tp1.y;
 		if (c0 < EPS && c1 < EPS)
-			return [tri_no_occlusion];
+			return tri_no_occlusion;
 
 		// not on a triangle edge and not infront of
 		// the triangle, so the segment is totally occluded
@@ -86,7 +88,7 @@ console.log(s);
 console.log(tp0);
 console.log(tp1);
 */
-		return [tri_hidden];
+		return tri_hidden;
 	}
 
 	// one or neither of the points are totally occluded
@@ -123,7 +125,7 @@ console.log(tp1);
 	// if none of the intersections are within the lines,
 	// then there is no possibility of occlusion
 	if (intercepts == 0)
-		return [tri_no_occlusion];
+		return tri_no_occlusion;
 
 	// for tangent lines it is possible that the intercepts
 	// might be the same.  check and remove the duplicates if so
@@ -152,7 +154,7 @@ console.log(tp1);
 
 	// this should never happen, unless there are very small triangles
 	if (intercepts == 3)
-		return [tri_no_occlusion];
+		return tri_no_occlusion;
 
 	// one intercept should mean that only one point is inside
 	if (intercepts == 1)
@@ -161,17 +163,17 @@ console.log(tp1);
 		{
 			// clipped from is0 to p1
 			s.p0 = intercept_s[0];
-			return [tri_clipped];
+			return tri_clipped;
 		}
 		if (inside(tp1))
 		{
 			// clipped from p0 to is0
 			s.p1 = intercept_s[0];
-			return [tri_clipped];
+			return tri_clipped;
 		}
 
 		// this might be a tangent, so nothing is clipped
-		return [tri_no_occlusion];
+		return tri_no_occlusion;
 	}
 
 	// two intercept: figure out which intercept point is closer
@@ -182,40 +184,40 @@ console.log(tp1);
 	let d11 = dist2(intercept_s[1], s.p1);
 
 	if (d00 < EPS && d11 < EPS)
-		return [tri_hidden];
+		return tri_hidden;
 	if (d01 < EPS && d10 < EPS)
-		return [tri_hidden];
+		return tri_hidden;
 
 	if (d00 < EPS)
 	{
 		s.p0 = intercept_s[1];
-		return [tri_clipped];
+		return tri_clipped;
 	} else
 	if (d01 < EPS)
 	{
 		s.p0 = intercept_s[0];
-		return [tri_clipped];
+		return tri_clipped;
 	} else
 	if (d10 < EPS)
 	{
 		s.p1 = intercept_s[1];
-		return [tri_clipped];
+		return tri_clipped;
 	} else
 	if (d11 < EPS)
 	{
 		s.p1 = intercept_s[0];
-		return [tri_clipped];
+		return tri_clipped;
 	}
 
 	// neither end point matches, so we'll create a new
 	// segment that excludes the space between is0 and is1
-	let new_segment = {
+	new_segment = {
 		p0: intercept_s[ d00 < d01 ? 1 : 0 ],
 		p1: s.p1,
 	};
 	s.p1 = intercept_s[ d00 < d01 ? 0 : 1 ];
 
-	return [tri_split,new_segment];
+	return tri_split;
 }
 
 
@@ -296,7 +298,7 @@ function hidden_wire(s, screen_map)
 		if (t.invisible)
 			continue;
 
-		let [rc,new_segment] = occlude(t, s);
+		let rc = occlude(t, s);
 		if (rc == tri_hidden)
 		{
 			return segments;
