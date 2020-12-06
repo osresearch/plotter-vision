@@ -24,7 +24,7 @@ function v3max(out,v0,v1)
 
 function close_enough(p0,p1)
 {
-	let eps = 0.00001;
+	let eps = 0.001;
 
 	let dx = p0.x - p1.x;
 	if (dx < -eps || eps < dx)
