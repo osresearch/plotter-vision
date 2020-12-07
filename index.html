@@ -56,7 +56,7 @@ document.forms['uploadForm'].elements['fileUpload'].onchange = (evt) => {
 
 function download()
 {	
-	const path = stl.hidden_segments.map(x =>
+	const path = stl.visible_segments.map(x =>
 		"M " + x.p0.x + "," + x.p0.y + " L " + x.p1.x + "," + x.p1.y
 	).join('\n');
 
