@@ -218,7 +218,17 @@ console.log(keyCode);
 	if (keyCode == DOWN_ARROW)
 		vz = +10;
 
+
 	//return false;
+}
+
+function keyTyped()
+{
+	if (key === 'v')
+	{
+		verbose = !verbose;
+		reproject = true;
+	}
 }
 
 function mousePressed()
@@ -256,6 +266,8 @@ function draw()
 	if (vx != 0 || vy != 0 || vz != 0)
 	{
 		camera_radius += vz;
+		if (camera_radius <= 0)
+			camera_radius = 1;
 
 		if (move_lookat)
 		{
@@ -333,7 +345,7 @@ function draw()
 
 	if (verbose)
 	{
-		stroke(80,0,0,80);
+		stroke(100,0,0,100);
 		for(let s of stl.coplanar)
 			v3_line(s.p0, s.p1);
 	}
