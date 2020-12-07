@@ -63,7 +63,7 @@ function STL(rawbytes_arraybuffer)
 	this.done_coplanar = 0;
 	this.model_map = {};
 
-	for(t of this.triangles)
+	for(let t of this.triangles)
 	{
 		let k0 = stl_key3d(t.model[0]);
 		let k1 = stl_key3d(t.model[1]);
@@ -88,11 +88,11 @@ function STL(rawbytes_arraybuffer)
 	this.project = function(camera)
 	{
 		this.screen_map = {};
-		this.hidden_segments = [];
+		this.visible_segments = [];
 		this.segments = [];
 		this.coplanar = [];
 
-		for(t of this.triangles)
+		for(let t of this.triangles)
 			this.project_triangle(t, camera);
 	}
 
@@ -200,8 +200,9 @@ function STL(rawbytes_arraybuffer)
 		while(this.segments.length != 0)
 		{
 			let s = this.segments.shift();
-			let new_segments = hidden_wire(s, this.screen_map);
-			this.hidden_segments = this.hidden_segments.concat(new_segments);
+			let visible_segment = hidden_wire(s, this.screen_map, this.segments);
+			if (visible_segment)
+				this.visible_segments.push(visible_segment);
 			count++;
 
 			if (performance.now() - start_time > ms)

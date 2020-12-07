@@ -17,9 +17,7 @@ const EPS = 0.001;
 let p_max = null;
 let p_min = null;
 
-let new_segment = null;
-
-function occlude(t,s)
+function occlude(t,s,work_queue)
 {
 	// if this triangle is not visible, then we don't process it
 	// since the screen coordinates might be invalid,
@@ -41,7 +39,7 @@ function occlude(t,s)
 	// if the segment max z is closer than the minimum
 	// z of the triangle, then this triangle can not occlude
 	if (p_max.z <= t.min.z)
-		return tri_no_occlusion;
+		return tri_in_front;
 
 	// perform a screen coordinates bounding box check for the
 	// triangle min/max.
@@ -67,30 +65,11 @@ function occlude(t,s)
 		// equality check in case the segment shares a vertex
 		// with the triangle.  If it is coming towards the
 		// camera in the other point, the no occlusion.
-		if (s.p0.z <= tp0.z && s.p1.z <= tp1.z)
+		if (s.p0.z < tp0.z+EPS && s.p1.z < tp1.z+EPS)
 			return tri_no_occlusion;
 
-		// if the barycentric coord is 0 on the same edge
-		// for both points, then it is part of the original line
-		// we have to re-compute the c coordinate 
-		if (tp0.x < EPS && tp1.x < EPS)
-			return tri_no_occlusion;
-		if (tp0.y < EPS && tp1.y < EPS)
-			return tri_no_occlusion;
-		let c0 = 1.0 - tp0.x - tp0.y;
-		let c1 = 1.0 - tp1.x - tp1.y;
-		if (c0 < EPS && c1 < EPS)
-			return tri_no_occlusion;
-
-		// not on a triangle edge and not infront of
-		// the triangle, so the segment is totally occluded
-		// could we also just check for z coordinates?
-/*
-console.log("BOTH INSIDE");
-console.log(s);
-console.log(tp0);
-console.log(tp1);
-*/
+		// this segment either punctures the triangle
+		// or something is bad about it.  ignore the other cases
 		return tri_hidden;
 	}
 
@@ -108,7 +87,7 @@ console.log(tp1);
 			s.p0,
 			s.p1,
 			t.screen[i],
-			t.screen[(i+1) %3],
+			t.screen[(i+1) % 3],
 		);
 		if (ratio < 0)
 			continue;
@@ -147,17 +126,18 @@ console.log(tp1);
 			intercept_s[1] = intercept_s[2];
 			intercept_t[1] = intercept_t[2];
 			intercepts--;
+		} else {
+			// this should never happen, unless there are very small triangles
+			// in which case we discard this triangle
+			return tri_hidden;
 		}
 	}
+
 	if (intercepts == 2)
 	{
 		if (close_enough(intercept_s[0], intercept_s[1]))
 			intercepts--;
 	}
-
-	// this should never happen, unless there are very small triangles
-	if (intercepts == 3)
-		return tri_no_occlusion;
 
 	// one intercept should mean that only one point is inside
 	if (intercepts == 1)
@@ -214,11 +194,14 @@ console.log(tp1);
 
 	// neither end point matches, so we'll create a new
 	// segment that excludes the space between is0 and is1
-	new_segment = {
-		p0: intercept_s[ d00 < d01 ? 1 : 0 ],
-		p1: s.p1,
-	};
-	s.p1 = intercept_s[ d00 < d01 ? 0 : 1 ];
+	let midpoint = d00 > d01 ? 1 : 0;
+
+	work_queue.push({
+		p0: s.p0,
+		p1: intercept_s[midpoint],
+	});
+
+	s.p0 = intercept_s[midpoint ? 0 : 1];
 
 	return tri_split;
 }
@@ -234,7 +217,9 @@ function inside(pb)
 
 function dist2(p0,p1)
 {
-	return p5.Vector.sub(p1,p0).magSq();
+	let dx = p0.x - p1.x;
+	let dy = p0.y - p1.y;
+	return dx*dx + dy*dy;
 }
 
 
@@ -279,7 +264,7 @@ function intercept_lines(p0,p1,p2,p3)
 // returns a list of segments that are visible
 // TODO: best if triangles is sorted by z depth
 // TODO: figure out a better representation for the screen map
-function hidden_wire(s, screen_map)
+function hidden_wire(s, screen_map, work_queue)
 {
 	let segments = [];
 
@@ -296,16 +281,18 @@ function hidden_wire(s, screen_map)
 			if (!triangles)
 				continue;
 
-	for(t of triangles)
+	for(let t of triangles)
 	{
 		if (t.invisible)
 			continue;
 
-		let rc = occlude(t, s);
+		let rc = occlude(t, s, work_queue);
+
+		// this segment is no longer visible,
+		// but any new segments that it has added to the array
+		// will be processed against the triangles again.
 		if (rc == tri_hidden)
-		{
-			return segments;
-		}
+			return null;
 
 		if (rc == tri_in_front)
 		{
@@ -320,18 +307,18 @@ function hidden_wire(s, screen_map)
 
 		if (rc == tri_split)
 		{
-			let new_segments = hidden_wire(new_segment, screen_map);
-			segments = segments.concat(new_segments);
+			if (verbose)
+				console.log("split", s.p0,s.p1, t);
 			continue;
 		}
 
 		// huh?
+		console.log("occlude() returned? ", rc)
 	}
 		}
 	}
 
 	// if we have made it all the way here, the remaining part
-	// of this segment is visible and should be added to our list
-	segments.push(s);
-	return segments;
+	// of this segment is visible and should be added to the draw list
+	return s;
 }

@@ -14,6 +14,7 @@ let x_offset;
 let y_offset;
 let z_scale = 1;
 dark_mode = true;
+verbose = false;
 
 stl = false;
 let camera;
@@ -114,6 +115,16 @@ function setup()
 
 function v3_line(p0,p1)
 {
+	if (verbose)
+	{
+		push()
+		color(255,255,255,40);
+		stroke(0.1);
+		text(p0.z.toFixed(2), p0.x, -p0.y);
+		text(p1.z.toFixed(2), p1.x, -p1.y);
+		pop();
+	}
+
 	line(p0.x, -p0.y, p1.x, -p1.y);
 }
 
@@ -317,18 +328,19 @@ function draw()
 	// draw all of our in-processing segments lightly
 	strokeWeight(1);
 	stroke(200,0,0);
-	for(s of stl.segments)
+	for(let s of stl.segments)
 		v3_line(s.p0, s.p1);
+
+	if (verbose)
+	{
+		stroke(80,0,0,80);
+		for(let s of stl.coplanar)
+			v3_line(s.p0, s.p1);
+	}
 
 	// if there are in process ones, draw an XYZ axis at the lookat
 	if (stl.segments.length != 0)
-	{
-		stroke(80,0,0,80);
-		for(s of stl.coplanar)
-			v3_line(s.p0, s.p1);
-
 		drawAxis(camera, camera.lookat);
-	}
 
 	// Draw all of our visible segments sharply
 	strokeWeight(0.5);
@@ -337,7 +349,7 @@ function draw()
 	else
 		stroke(0,0,0);
 
-	for(s of stl.hidden_segments)
+	for(let s of stl.visible_segments)
 		v3_line(s.p0, s.p1);
 
 	pop();
