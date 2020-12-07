@@ -91,16 +91,19 @@ function STL(rawbytes_arraybuffer)
 		this.visible_segments = [];
 		this.segments = [];
 		this.coplanar = [];
+		this.interval = null;
 
 		// project the triangles into the screen mapping
 		console.log("projecting triangles");
 		for(let t of this.triangles)
 			this.project_triangle(t, camera);
 
+/*
 		// sort the screen mapped triangles by Z
 		console.log("sorting triangles");
 		for(let key in this.screen_map)
 			this.screen_map[key].sort((a,b) => a.min.z - b.min.z);
+*/
 	}
 
 	this.project_triangle = function(t,camera)
@@ -142,7 +145,7 @@ function STL(rawbytes_arraybuffer)
 				this.segments.push({ p0: t2, p1: t0 });
 		}
 
-
+/*
 		// build the screen map for all of the sectors
 		// that might contain this triangle's projection
 		let min_key_x = Math.trunc(t.min.x/stl_key2d_scale);
@@ -161,6 +164,7 @@ function STL(rawbytes_arraybuffer)
 					this.screen_map[key] = [t];
 			}
 		}
+*/
 	}
 
 
@@ -186,6 +190,7 @@ function STL(rawbytes_arraybuffer)
 		}
 
 		this.project(camera);
+
 		return true;
 	}
 
@@ -194,6 +199,24 @@ function STL(rawbytes_arraybuffer)
 	// only processes some of the segments per call.
 	this.do_hidden = function(camera,ms)
 	{
+		if (!this.interval)
+		{
+			// ofload the interval work until we are
+			// starting to compute hidden lines
+			this.interval = new Interval(0,0,width/2);
+
+			// insert the triangle into the interval tree for
+			// faster queries of segment intersections
+			for(t of this.triangles)
+			{
+				if (t.invisible)
+					continue;
+				this.interval.insert(t, t.min.x, t.min.y, t.max.x, t.max.y);
+			}
+
+			return true;
+		}
+
 		let num_segments = this.segments.length;
 		if (num_segments == 0)
 			return false;
@@ -207,7 +230,7 @@ function STL(rawbytes_arraybuffer)
 		while(this.segments.length != 0)
 		{
 			let s = this.segments.shift();
-			let visible_segment = hidden_wire(s, this.screen_map, this.segments);
+			let visible_segment = hidden_wire(s, this.interval, this.segments);
 			if (visible_segment)
 				this.visible_segments.push(visible_segment);
 			count++;

@@ -75,6 +75,10 @@ function Triangle(p0, p1, p2)
 	// either off-screen or backface culling
 	this.invisible = false;
 
+	// discarded triangles are completely eliminated, so they will
+	// not be processed ever again.
+	this.discarded = false;
+
 
 	// compute the coordinates in screen space and decide
 	// if it is onscreen or backfaced culled
@@ -82,6 +86,9 @@ function Triangle(p0, p1, p2)
 	{
 		this.generation = generation;
 		this.invisible = true; // assume it will be discarded
+
+		if (this.discarded)
+			return false;
 
 		let s0 = camera.project(this.model[0], this.screen[0]);
 		let s1 = camera.project(this.model[1], this.screen[1]);
@@ -161,7 +168,10 @@ function Triangle(p0, p1, p2)
 		// all three points match; this must be a duplicate
 		// triangle of some sort.
 		if (matches == 0b111)
-			console.log("three points match? " + this + " " + t);
+		{
+			//console.log("three points match? " + this + " " + t);
+			return -1;
+		}
 
 		return 0;
 	}
@@ -176,6 +186,12 @@ function Triangle(p0, p1, p2)
 			for(let t of triangle_map[stl_key3d(p)])
 			{
 				let edges = this.coplanar_check(t);
+				if (edges === -1)
+				{
+					t.discarded = true;
+					continue;
+				}
+
 				if (edges == 0)
 					continue;
 

@@ -264,22 +264,19 @@ function intercept_lines(p0,p1,p2,p3)
 // returns a list of segments that are visible
 // TODO: best if triangles is sorted by z depth
 // TODO: figure out a better representation for the screen map
-function hidden_wire(s, screen_map, work_queue)
+function hidden_wire(s, interval, work_queue)
 {
 	let segments = [];
 
-	let min_key_x = Math.trunc(Math.min(s.p0.x, s.p1.x) / stl_key2d_scale);
-	let min_key_y = Math.trunc(Math.min(s.p0.y, s.p1.y) / stl_key2d_scale);
-	let max_key_x = Math.trunc(Math.max(s.p0.x, s.p1.x) / stl_key2d_scale);
-	let max_key_y = Math.trunc(Math.max(s.p0.y, s.p1.y) / stl_key2d_scale);
+	if (!p_max) p_max = createVector();
+	if (!p_min) p_min = createVector();
 
-	for(let x = min_key_x ; x <= max_key_x ; x++)
-	{
-		for(let y = min_key_y ; y <= max_key_y ; y++)
-		{
-			let triangles = screen_map[x + "," + y];
-			if (!triangles)
-				continue;
+	v3max(p_max, s.p0, s.p1);
+	v3min(p_min, s.p0, s.p1);
+
+	let triangles = interval.query(p_min.x,p_min.y,p_max.x,p_max.y);
+	//console.log("occlude ", triangles.length);
+	//triangles.sort((a,b) => a.min.z - b.min.z);
 
 	for(let t of triangles)
 	{
@@ -300,7 +297,10 @@ function hidden_wire(s, screen_map, work_queue)
 			// this triangle, which means that no other
 			// triangles on the sorted list can occlude
 			// the segment, so we're done.
-			break;
+			//break;
+
+			// but the interval tree isn't sorted (yet)
+			continue;
 		}
 
 		if (rc == tri_clipped
@@ -316,8 +316,6 @@ function hidden_wire(s, screen_map, work_queue)
 
 		// huh?
 		console.log("occlude() returned? ", rc)
-	}
-		}
 	}
 
 	// if we have made it all the way here, the remaining part

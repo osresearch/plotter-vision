@@ -367,6 +367,6 @@ function draw()
 	pop();
 
 	// they are dragging; do not try to do any additional work
-	if (!mouseIsPressed && !vx && !vy)
+	if (!mouseIsPressed)
 		redraw = stl.do_work(camera, 200);
 }
