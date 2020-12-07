@@ -50,9 +50,11 @@ function onscreen(p, w, h)
 	return true;
 }
 
+let triangle_id = 0;
+
 function Triangle(p0, p1, p2)
 {
-
+	this.id = triangle_id++;
 	this.model = [p0,p1,p2];
 	this.normal = tri_normal(p0,p1,p2);
 	this.screen = [ createVector(), createVector(), createVector() ];
@@ -169,9 +171,9 @@ function Triangle(p0, p1, p2)
 	{
 		// for each point in the triangle, look at the points
 		// that potentially match the point
-		for(p of this.model)
+		for(let p of this.model)
 		{
-			for(t of triangle_map[stl_key3d(p)])
+			for(let t of triangle_map[stl_key3d(p)])
 			{
 				let edges = this.coplanar_check(t);
 				if (edges == 0)
