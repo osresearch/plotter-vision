@@ -296,9 +296,11 @@ function hidden_wire(s, screen_map, work_queue)
 
 		if (rc == tri_in_front)
 		{
-			// if the list were sorted, we would be done
-			// and could return these segments
-			continue;
+			// this line segment is entirely in front of
+			// this triangle, which means that no other
+			// triangles on the sorted list can occlude
+			// the segment, so we're done.
+			break;
 		}
 
 		if (rc == tri_clipped

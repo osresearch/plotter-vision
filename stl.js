@@ -92,8 +92,15 @@ function STL(rawbytes_arraybuffer)
 		this.segments = [];
 		this.coplanar = [];
 
+		// project the triangles into the screen mapping
+		console.log("projecting triangles");
 		for(let t of this.triangles)
 			this.project_triangle(t, camera);
+
+		// sort the screen mapped triangles by Z
+		console.log("sorting triangles");
+		for(let key in this.screen_map)
+			this.screen_map[key].sort((a,b) => a.min.z - b.min.z);
 	}
 
 	this.project_triangle = function(t,camera)
