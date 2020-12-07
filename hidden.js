@@ -229,7 +229,7 @@ function inside(pb)
 {
 	let a = pb.x;
 	let b = pb.y;
-	return 0 <= a && 0 <= b && a + b <= 1 + EPS;
+	return -EPS <= a && -EPS <= b && a + b <= 1 + EPS;
 }
 
 function dist2(p0,p1)
