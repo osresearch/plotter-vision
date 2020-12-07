@@ -32,43 +32,55 @@ More info: <a href="https://trmm.net/Hidden_Wireframe/">trmm.net/Hidden_Wirefram
 </div>
 
 <script>
+let filename = "plotter.stl";
+
 document.forms['uploadForm'].elements['fileUpload'].onchange = (evt) => {
 	const reader = new FileReader();
-	console.log("upload changed");
-	reader.onload = (evt) => {
-		if (evt.target.readyState != 2)
-			return;
-		if (evt.target.error) {
-			console.log("ERROR READING FILE");
-			return;
-		}
-
+	console.log("upload changed", evt);
+	reader.onloadend = (evt) => {
+		console.log(evt.target);
 		const content = evt.target.result;
+		if (!content)
+			return;
+
 		const raw = new Uint8Array(content);
-		console.log("content:", raw);
+		//console.log("content:", raw);
 		stl = new STL(raw);
-		console.log("new stl:", stl);
+		//console.log("new stl:", stl);
 		reproject = true;
 	};
 
-	reader.readAsArrayBuffer(evt.target.files[0]);
+	let file = evt.target.files[0];
+	filename = file.name;
+
+	console.log("uploading " + filename);
+
+	reader.readAsArrayBuffer(file);
 };
 
 function download()
 {	
 	const path = stl.visible_segments.map(x =>
-		"M " + x.p0.x + "," + x.p0.y + " L " + x.p1.x + "," + x.p1.y
+		"M " + (x.p0.x + width/2) + "," + (height/2 - x.p0.y) + " L " + (x.p1.x + width/2) + "," + (height/2 - x.p1.y)
 	).join('\n');
 
-	let svg = "<svg><path d='\n";
+	let svg = "";
+	svg += "<?xm version='1.0'?>\n";
+	svg += "<svg xmlns='http://www.w3.org/2000/svg' version='1.2' baseProfile='tiny' width='" + width + "px' height='" + height + "px'>\n";
+	svg += "<desc>plotter.vision</desc>";
+	svg += "<path d='\n";
 	svg += path;
-	svg += "' style='stroke:#ff0000;stroke-width:1'/></svg>";
+	svg += "' style='stroke:#ff0000;stroke-width:1'/>";
+	svg += "</svg>";
 
 	svg = encodeURIComponent(svg);
 
 	var element = document.createElement('a');
 	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + svg);
-	element.setAttribute('download', "hiddenwire.svg");
+
+	// attempt to reuse their filename
+	let svgname = filename.replace(/\.stl$/, "");
+	element.setAttribute('download', svgname + ".svg");
 
 	element.style.display = 'none';
 	document.body.appendChild(element);
