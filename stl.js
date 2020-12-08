@@ -26,37 +26,86 @@ function parse_xyz(bytes, offset)
 	);
 }
 
-
-function STL(rawbytes_arraybuffer)
+function stl_ascii(content)
 {
-	let bytes = new DataView(rawbytes_arraybuffer.buffer);
-	let len = rawbytes_arraybuffer.length;
-	let num_triangles = bytes.getUint32(80, 1); // little endian
+	let vertex = [];
+
+	// super simple attempt to just convert every three line triple
+	// of vertices into a XYZ point
+	content.replace(/vertex\s+([^\s]+\s+[^\s]+\s+[^\s]+)/g, (match, verts) => {
+		//console.log(verts);
+		const coords = verts.split(/\s+/);
+		vertex.push(createVector(
+			float(coords[0]),
+			float(coords[1]),
+			float(coords[2]),
+		));
+	});
+
+	console.log("vertex count = ", vertex.length);
+
+	let triangles = [];
+	for(let i = 0 ; i < vertex.length ; i += 3)
+	{
+		triangles.push(new Triangle(
+			vertex[i+0],
+			vertex[i+1],
+			vertex[i+2],
+		));
+	}
+
+	return triangles;
+}
+
+function stl_binary(rawbytes)
+{
+	const bytes = new DataView(rawbytes.buffer);
+	const len = rawbytes.length;
+	console.log(len, bytes);
+	const num_triangles = bytes.getUint32(80, 1); // little endian
 	console.log(num_triangles + " triangles");
 
 	// sanity check the size
 	let triangle_size = (3 + 9) * 4 + 2;
 	let expected_size = 80 + 4 + num_triangles * triangle_size;
 
+	let triangles = [];
+
 	if (expected_size != len)
 	{
 		console.log("Expected " + expected_size + " for " + num_triangles + " triangles, got " + len + " bytes");
 		// throw?
-		//return;
+		return triangles;
 	}
 
-	// trade some accuracy for faster rendering and better drawing
-	this.min_length = 5;
-	this.triangles = [];
 
 	for (let offset = 84 ; offset < len ; offset += 50)
 	{
-		this.triangles.push(new Triangle(
+		triangles.push(new Triangle(
 			parse_xyz(bytes, offset + 12),
 			parse_xyz(bytes, offset + 24),
 			parse_xyz(bytes, offset + 36),
 		));
 	}
+
+	return triangles;
+}
+
+
+function STL(content)
+{
+	const rawbytes = new Uint8Array(content);
+	const txtbytes = new TextDecoder("utf-8").decode(rawbytes)
+
+	// heuristic to detect ASCII formatted files
+	if (txtbytes.substr(0,6) == "solid ") {
+		this.triangles = stl_ascii(txtbytes);
+	} else {
+		this.triangles = stl_binary(rawbytes);
+	}
+
+	// trade some accuracy for faster rendering and better drawing
+	this.min_length = 5;
 
 	// map the STL vertices within a fraction of a pixel
 	// so that coplanar mapping can be done much more quickly.

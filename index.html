@@ -43,9 +43,8 @@ document.forms['uploadForm'].elements['fileUpload'].onchange = (evt) => {
 		if (!content)
 			return;
 
-		const raw = new Uint8Array(content);
 		//console.log("content:", raw);
-		stl = new STL(raw);
+		stl = new STL(content);
 		//console.log("new stl:", stl);
 		reproject = true;
 	};

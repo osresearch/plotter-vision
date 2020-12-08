@@ -70,10 +70,8 @@ function loadBytes(file, callback) {
   oReq.responseType = "arraybuffer";
   oReq.onload = function(oEvent) {
     let arrayBuffer = oReq.response;
-    if (arrayBuffer) {
-      if (callback) {
-        callback(new Uint8Array(arrayBuffer));
-      }
+    if (arrayBuffer && callback) {
+      callback(arrayBuffer);
     }
   }
   oReq.send(null);
