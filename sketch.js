@@ -17,7 +17,10 @@ dark_mode = true;
 verbose = false;
 
 stl = false;
+stl2 = false;
 let camera;
+let camera2; // for 3D
+let eye_separation = 10;
 redraw = false;
 reproject = false;
 let vx = 0;
@@ -53,6 +56,13 @@ function computeEye()
 	camera.eye.y = camera_radius * Math.sin(camera_theta) * Math.cos(camera_psi);
 	camera.eye.z = camera_radius * Math.cos(camera_theta);
 
+	// displace the camera2 eye by a little bit
+	// for 3D effect.  The u vector points to the right of the camera
+	// although there is a problem with up when we are close to theta
+	camera2.eye.x = camera.eye.x + camera.u.x * eye_separation;
+	camera2.eye.y = camera.eye.y + camera.u.y * eye_separation;
+	camera2.eye.z = camera.eye.z + camera.u.z * eye_separation;
+
 	if (camera_theta < 0)
 		camera.up.z = -1;
 	else
@@ -60,6 +70,10 @@ function computeEye()
 
 	camera.eye.add(camera.lookat);
 	camera.update_matrix();
+
+	// duplicate for 3D (lookat and up are shared)
+	camera2.eye.add(camera.lookat);
+	camera2.update_matrix();
 }
 
 
@@ -92,6 +106,7 @@ function setup()
 
 	loadBytes("test.stl", function(d){
 		stl = new STL(d);
+		stl2 = new STL(d);
 		reproject = true;
 	});
 
@@ -102,10 +117,12 @@ function setup()
 	camera_radius = 170;
 
 	let eye = createVector(0,camera_radius,0);
+	let eye2 = createVector(0,camera_radius,0);
 	let lookat = createVector(0,0,00);
 	let up = createVector(0,0,1);
 	let fov = 80;
 	camera = new Camera(eye,lookat,up,fov);
+	camera2 = new Camera(eye2,lookat,up,fov);
 
 	computeEye();
 }
@@ -290,6 +307,7 @@ function draw()
 		reproject = false;
 		redraw = true;
 		stl.project(camera);
+		stl2.project(camera2);
 		start_time = performance.now();
 		tri_per_sec = 0;
 	}
@@ -337,7 +355,7 @@ function draw()
 
 	// draw all of our in-processing segments lightly
 	strokeWeight(1);
-	stroke(200,0,0);
+	stroke(0,200,0);
 	for(let s of stl.segments)
 		v3_line(s.p0, s.p1);
 
@@ -359,12 +377,20 @@ function draw()
 	else
 		stroke(0,0,0);
 
+	stroke(255,0,0);
 	for(let s of stl.visible_segments)
+		v3_line(s.p0, s.p1);
+
+	stroke(0,0,255);
+	for(let s of stl2.visible_segments)
 		v3_line(s.p0, s.p1);
 
 	pop();
 
 	// they are dragging; do not try to do any additional work
 	if (!mouseIsPressed && !vx && !vy)
+	{
+		stl2.do_work(camera2, 200);
 		redraw = stl.do_work(camera, 200);
+	}
 }
