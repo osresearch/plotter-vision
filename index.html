@@ -21,12 +21,27 @@
   </head>
   <body>
 <form id="uploadForm">
-<input type="button" value="Light/Dark" onclick="dark_mode=!dark_mode; redraw=true;" />
-<input type="button" value="3D" onclick="redblue_mode=!redblue_mode; dark_mode=false; reproject=true;" />
 <input id="fileUpload" name="files[]" style="display:none;" type="file"/>
 <input type="button" id="loadFileXml" value="Upload STL" onclick="document.getElementById('fileUpload').click();" />
 <input id="fileDownload" type="button" value="Download SVG" onclick="download()"/>
-More info: <a href="https://trmm.net/Hidden_Wireframe/">trmm.net/Hidden_Wireframe</a>
+<input type="button" value="Light/Dark" onclick="
+	dark_mode=!dark_mode;
+	redraw=true;"
+/>
+<input type="button" value="Red/Blue 3D" onclick="
+	redblue_mode=!redblue_mode;
+	dark_mode=false;
+	reproject=true;
+	eye_separation_slider.style.display = redblue_mode ? '' : 'none';
+"/>
+<input id="eye_separation_slider" type="range" style="display:none" min="1" max="100" value="20" oninput="
+	console.log(eye_separation, this);
+	eye_separation=this.value/10;
+	computeEye();
+	reproject=true;
+" />
+<span align=right>
+More info: <a href="https://trmm.net/Hidden_Wireframe/">trmm.net/Hidden_Wireframe</a></span>
 </form>
 <div id="sketch-holder">
       <!-- Our sketch will go here! -->
