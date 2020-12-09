@@ -1,10 +1,10 @@
 /*
- * Parse a binary STL file into a list of triangles
- * Header (84 bytes):
- *   80 byte header
+ * Parse ascii or binary STL file into a list of triangles
+ * Binary Header (84 bytes):
+ *   80 byte name
  *   uint32_t number of triangles
  *
- * Triangle (50 bytes)
+ * Binary Triangle (50 bytes)
  *   3 32-bit float normals
  *   9 32-bit float x,y,z tripples
  *   uint16_t attributes (ignored)
