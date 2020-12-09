@@ -31,30 +31,26 @@ function Camera(eye,lookat,up,fov)
 	this.height = height;
 
 	// project a point from model space to camera space
-	this.project = function(v_in,v_out=null)
+	// if p[2] is negative, the point is behind the camera
+	this.project = function(v_in, v_out=null)
 	{
-		let v = [v_in.x, v_in.y, v_in.z, 1];
+		let v = [v_in[0], v_in[1], v_in[2], 1];
 		let p = [0,0,0,0];
 
 		for(let i = 0 ; i < 4 ; i++)
 			for(let j = 0 ; j < 4 ; j++)
 				p[i] += this.matrix[i][j] * v[j];
 
-		// if the projected point has negative z, this means
-		// it is behind us and can be discarded
-		if (p[2] <= 0)
-			return;
-
 		let x = p[0] / p[3];
 		let y = p[1] / p[3];
 		let z = p[2];
 		if (!v_out)
-			return createVector(x,y,z);
+			return v3new(x,y,z);
 
 		// update in place to avoid an allocation
-		v_out.x = x;
-		v_out.y = y;
-		v_out.z = z;
+		v_out[0] = x;
+		v_out[1] = y;
+		v_out[2] = z;
 		return v_out;
 	}
 
@@ -64,18 +60,19 @@ function Camera(eye,lookat,up,fov)
 		// compute the three basis vectors for the camera
 
 		// w is the Z axis from the eye to the destination point
-		let w = p5.Vector.sub(this.eye, this.lookat).normalize();
+		let w = v3normalize(v3sub(v3copy(this.eye), this.lookat));
 
 		// u is the X axis to the right side of the camera
-		let u = this.up.cross(w).normalize();
+		//let u = this.up.cross(w).normalize();
+		let u = v3normalize(v3cross(this.up, w));
 
 		// v is the Y axis aligned with the UP axis
-		let v = w.cross(u).normalize();
+		let v = v3normalize(v3cross(w, u));
 
 		let cam = [
-			[ u.x, u.y, u.z, -u.dot(this.eye) ],
-			[ v.x, v.y, v.z, -v.dot(this.eye) ],
-			[ w.x, w.y, w.z, -w.dot(this.eye) ],
+			[ u[0], u[1], u[2], -v3dot(u,this.eye) ],
+			[ v[0], v[1], v[2], -v3dot(v,this.eye) ],
+			[ w[0], w[1], w[2], -v3dot(w,this.eye) ],
 			[ 0,   0,   0,   1 ],
 		];
 

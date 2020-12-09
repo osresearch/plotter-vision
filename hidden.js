@@ -14,9 +14,6 @@ const tri_clipped = 3; // occlusion and either p0 or p1 has been updated
 const tri_split = 4; //  occlusion and p0/p1 have been updated and p2/p3 have been created
 const EPS = 0.001;
 
-let p_max = null;
-let p_min = null;
-
 function occlude(t,s,work_queue)
 {
 	// if this triangle is not visible, then we don't process it
@@ -30,24 +27,21 @@ function occlude(t,s,work_queue)
 	if (seg_len < 1)
 		return tri_hidden;
 
-	if (!p_max) p_max = createVector();
-	if (!p_min) p_min = createVector();
-
-	v3max(p_max, s.p0, s.p1);
-	v3min(p_min, s.p0, s.p1);
+	let p_max = s.min; // v3max(s.p0, s.p1);
+	let p_min = s.min; // v3min(s.p0, s.p1);
 
 	// if the segment max z is closer than the minimum
 	// z of the triangle, then this triangle can not occlude
-	if (p_max.z <= t.min.z)
+	if (p_max[2] <= t.min[2])
 		return tri_in_front;
 
 	// perform a screen coordinates bounding box check for the
 	// triangle min/max.
 	// if the segment lies outside of this box and doesn't
 	// cross it, then there is no chance of occlusion
-	if (p_max.x < t.min.x || t.max.x < p_min.x)
+	if (p_max[0] < t.min[0] || t.max[0] < p_min[0])
 		return tri_no_occlusion;
-	if (p_max.y < t.min.y || t.max.y < p_min.y)
+	if (p_max[1] < t.min[1] || t.max[1] < p_min[1])
 		return tri_no_occlusion;
 
 	// there is a chance this segment crosses the triangle,
@@ -65,7 +59,7 @@ function occlude(t,s,work_queue)
 		// equality check in case the segment shares a vertex
 		// with the triangle.  If it is coming towards the
 		// camera in the other point, the no occlusion.
-		if (s.p0.z < tp0.z+EPS && s.p1.z < tp1.z+EPS)
+		if (s.p0[2] < tp0[2]+EPS && s.p1[2] < tp1[2]+EPS)
 			return tri_no_occlusion;
 
 		// this segment either punctures the triangle
@@ -94,7 +88,7 @@ function occlude(t,s,work_queue)
 
 		// if the segment intercept is closer than the triangle
 		// intercept, then this does not count as an intersection
-		if (is.z <= it.z)
+		if (is[2] <= it[2])
 			continue;
 
 		intercepts++;
@@ -210,15 +204,15 @@ function occlude(t,s,work_queue)
 // Returns true if a barycentric coordinate is inside the triangle
 function inside(pb)
 {
-	let a = pb.x;
-	let b = pb.y;
+	let a = pb[0];
+	let b = pb[1];
 	return -EPS <= a && -EPS <= b && a + b <= 1 + EPS;
 }
 
 function dist2(p0,p1)
 {
-	let dx = p0.x - p1.x;
-	let dy = p0.y - p1.y;
+	let dx = p0[0] - p1[0];
+	let dy = p0[1] - p1[1];
 	return dx*dx + dy*dy;
 }
 
@@ -230,11 +224,11 @@ function dist2(p0,p1)
 // coordinates
 function intercept_lines(p0,p1,p2,p3)
 {
-	let s0 = p5.Vector.sub(p1,p0);
-	let s1 = p5.Vector.sub(p3,p2);
+	let s0 = v3sub(v3copy(p1),p0);
+	let s1 = v3sub(v3copy(p3),p2);
 
 	// compute s0 x s1
-	let d = s0.x * s1.y - s1.x * s0.y
+	let d = s0[0] * s1[1] - s1[0] * s0[1]
 
 	// if they are close to parallel then we define that
 	// as non-intersecting
@@ -242,8 +236,8 @@ function intercept_lines(p0,p1,p2,p3)
 		return [-1,null,null];
 
 	// compute how far along each line they would intersect
-	let r0 = (s1.x * (p0.y - p2.y) - s1.y * (p0.x - p2.x)) / d;
-	let r1 = (s0.x * (p0.y - p2.y) - s0.y * (p0.x - p2.x)) / d;
+	let r0 = (s1[0] * (p0[1] - p2[1]) - s1[1] * (p0[0] - p2[0])) / d;
+	let r1 = (s0[0] * (p0[1] - p2[1]) - s0[1] * (p0[0] - p2[0])) / d;
 
 	// if they are outside of (0,1) then the intersection
 	// occurs outside of either segment and are non-intersecting
@@ -253,8 +247,8 @@ function intercept_lines(p0,p1,p2,p3)
 
 	// compute the points of intersections for the two
 	// segments as p + r * s
-	s0.mult(r0).add(p0);
-	s1.mult(r1).add(p2);
+	v3add(v3mult(s0, r0), p0);
+	v3add(v3mult(s1, r1), p2);
 
 	return [r0, s0, s1];
 }
@@ -268,10 +262,14 @@ function hidden_wire(s, screen_map, work_queue)
 {
 	let segments = [];
 
-	let min_key_x = Math.trunc(Math.min(s.p0.x, s.p1.x) / stl_key2d_scale);
-	let min_key_y = Math.trunc(Math.min(s.p0.y, s.p1.y) / stl_key2d_scale);
-	let max_key_x = Math.trunc(Math.max(s.p0.x, s.p1.x) / stl_key2d_scale);
-	let max_key_y = Math.trunc(Math.max(s.p0.y, s.p1.y) / stl_key2d_scale);
+	let min_key_x = Math.trunc(Math.min(s.p0[0], s.p1[0]) / stl_key2d_scale);
+	let min_key_y = Math.trunc(Math.min(s.p0[1], s.p1[1]) / stl_key2d_scale);
+	let max_key_x = Math.trunc(Math.max(s.p0[0], s.p1[0]) / stl_key2d_scale);
+	let max_key_y = Math.trunc(Math.max(s.p0[1], s.p1[1]) / stl_key2d_scale);
+
+	// update the bounding box for the segment
+	s.min = v3min(s.p0, s.p1);
+	s.max = v3max(s.p0, s.p1);
 
 	for(let x = min_key_x ; x <= max_key_x ; x++)
 	{
@@ -303,16 +301,15 @@ function hidden_wire(s, screen_map, work_queue)
 			break;
 		}
 
-		if (rc == tri_clipped
-		||  rc == tri_no_occlusion)
-			continue;
-
-		if (rc == tri_split)
+		if (rc == tri_clipped || rc == tri_split)
 		{
-			if (verbose)
-				console.log("split", s.p0,s.p1, t);
+			// update the bounding box for the resulting segment
+			s.min = v3min(s.p0, s.p1);
+			s.max = v3max(s.p0, s.p1);
 			continue;
 		}
+		if (rc == tri_no_occlusion)
+			continue;
 
 		// huh?
 		console.log("occlude() returned? ", rc)

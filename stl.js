@@ -9,17 +9,17 @@ const stl_key2d_scale = 16;
 
 function stl_key3d(p)
 {
-	return int(p.x*100) + "," + int(p.y*100) + "," +int(p.z*100);
+	return int(p[0]*100) + "," + int(p[1]*100) + "," +int(p[2]*100);
 }
 function stl_key2d(p)
 {
-	return int(p.x/stl_key2d_scale) + "," + int(p.y/stl_key2d_scale);
+	return int(p[0]/stl_key2d_scale) + "," + int(p[1]/stl_key2d_scale);
 }
 
 
 function parse_xyz(bytes, offset)
 {
-	return createVector(
+	return v3new(
 		bytes.getFloat32(offset+0, 1),
 		bytes.getFloat32(offset+4, 1),
 		bytes.getFloat32(offset+8, 1),
@@ -35,7 +35,7 @@ function stl_ascii(content)
 	content.replace(/vertex\s+([^\s]+\s+[^\s]+\s+[^\s]+)/g, (match, verts) => {
 		//console.log(verts);
 		const coords = verts.split(/\s+/);
-		vertex.push(createVector(
+		vertex.push(v3new(
 			float(coords[0]),
 			float(coords[1]),
 			float(coords[2]),
@@ -149,7 +149,7 @@ function STL(content)
 		// sort the screen mapped triangles by Z
 		console.log("sorting triangles");
 		for(let key in this.screen_map)
-			this.screen_map[key].sort((a,b) => a.min.z - b.min.z);
+			this.screen_map[key].sort((a,b) => a.min[2] - b.min[2]);
 	}
 
 	this.project_triangle = function(t,camera)
@@ -194,10 +194,10 @@ function STL(content)
 
 		// build the screen map for all of the sectors
 		// that might contain this triangle's projection
-		let min_key_x = Math.trunc(t.min.x/stl_key2d_scale);
-		let min_key_y = Math.trunc(t.min.y/stl_key2d_scale);
-		let max_key_x = Math.trunc(t.max.x/stl_key2d_scale);
-		let max_key_y = Math.trunc(t.max.y/stl_key2d_scale);
+		let min_key_x = Math.trunc(t.min[0]/stl_key2d_scale);
+		let min_key_y = Math.trunc(t.min[1]/stl_key2d_scale);
+		let max_key_x = Math.trunc(t.max[0]/stl_key2d_scale);
+		let max_key_y = Math.trunc(t.max[1]/stl_key2d_scale);
 
 		for(let x=min_key_x ; x <= max_key_x ; x++)
 		{

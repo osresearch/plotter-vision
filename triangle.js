@@ -1,54 +1,12 @@
 
 function tri_normal(p0,p1,p2)
 {
-	let v0 = p5.Vector.sub(p1, p0);
-	let v1 = p5.Vector.sub(p2, p0);
-	return v0.cross(v1).normalize();
+	let v0 = v3sub(v3copy(p1), p0);
+	let v1 = v3sub(v3copy(p2), p0);
+	return v3normalize(v3cross(v0,v1));
 }
 
 
-
-function v3min(out,v0,v1)
-{
-	out.x = Math.min(v0.x, v1.x);
-	out.y = Math.min(v0.y, v1.y);
-	out.z = Math.min(v0.z, v1.z);
-}
-
-function v3max(out,v0,v1)
-{
-	out.x = Math.max(v0.x, v1.x);
-	out.y = Math.max(v0.y, v1.y);
-	out.z = Math.max(v0.z, v1.z);
-}
-
-function close_enough(p0,p1)
-{
-	let eps = 0.0001;
-
-	let dx = p0.x - p1.x;
-	if (dx < -eps || eps < dx)
-		return false;
-
-	let dy = p0.y - p1.y;
-	if (dy < -eps || eps < dy)
-		return false;
-
-	let dz = p0.z - p1.z;
-	if (dz < -eps || eps < dz)
-		return false;
-
-	return true;
-}
-
-function onscreen(p, w, h)
-{
-	if (p.x < -w/2 || w/2 < p.x)
-		return false;
-	if (p.y < -h/2 || h/2 < p.y)
-		return false;
-	return true;
-}
 
 let triangle_id = 0;
 
@@ -57,11 +15,11 @@ function Triangle(p0, p1, p2)
 	this.id = triangle_id++;
 	this.model = [p0,p1,p2];
 	this.normal = tri_normal(p0,p1,p2);
-	this.screen = [ createVector(), createVector(), createVector() ];
-	this.min = createVector();
-	this.max = createVector();
-	this.t1 = createVector();
-	this.t2 = createVector();
+	this.screen = [ v3new(), v3new(), v3new() ];
+	this.min = v3new();
+	this.max = v3new();
+	this.t1 = v3new();
+	this.t2 = v3new();
 
 	// projection into the screen space and the camera generation
 	// counter that was used to compute it
@@ -88,7 +46,7 @@ function Triangle(p0, p1, p2)
 		let s2 = camera.project(this.model[2], this.screen[2]);
 
 		// if any of them are behind us, mark this triangle as invisible
-		if (!s0 || !s1 || !s2)
+		if (s0[2] < 0 || s1[2] < 0 || s2[2] < 0)
 			return false;
 
 		// if all three points are off screen then discard this triangle
@@ -104,25 +62,20 @@ function Triangle(p0, p1, p2)
 		// compute the screen normal and mark this triangle
 		// as invisible if it is facing away from us
 		let normal = tri_normal(s0,s1,s2);
-		if (normal.z < 0)
+		if (normal[2] < 0)
 			return false;
 
 		// after all that, the triangle is visible
 		this.invisible = false;
 
 		// cache the min/max coordinates for a bounding box
-		v3min(this.min, s0, s1);
-		v3min(this.min, this.min, s2);
-
-		v3max(this.max, s0, s1);
-		v3max(this.max, this.max, s2);
+		v3min3(this.min, s0, s1, s2);
+		v3max3(this.max, s0, s1, s2);
 
 		// compute the coordinates of the other two points,
 		// relative to the first screen coordinate point
-		this.t1.set(s1);
-		this.t2.set(s2);
-		this.t1.sub(s0);
-		this.t2.sub(s0);
+		this.t1 = v3sub(v3copy(s1), s0);
+		this.t2 = v3sub(v3copy(s2), s0);
 
 		return true;
 	};
@@ -198,17 +151,17 @@ function Triangle(p0, p1, p2)
 	{
 		let t1 = this.t1;
 		let t2 = this.t2;
-		let px = p.x - this.screen[0].x;
-		let py = p.y - this.screen[0].y;
+		let px = p[0] - this.screen[0][0];
+		let py = p[1] - this.screen[0][1];
 
-		let d = t1.x * t2.y - t2.x * t1.y;
-		let a = (px * t2.y - py * t2.x) / d;
-		let b = (py * t1.x - px * t1.y) / d;
+		let d = t1[0] * t2[1] - t2[0] * t1[1];
+		let a = (px * t2[1] - py * t2[0]) / d;
+		let b = (py * t1[0] - px * t1[1]) / d;
 
 		return createVector(
 			a,
 			b,
-			this.screen[0].z + a * t1.z + b * t2.z,
+			this.screen[0][2] + a * t1[2] + b * t2[2],
 		);
 	}
 }

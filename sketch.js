@@ -49,16 +49,16 @@ function computeEye()
 	if (camera_psi > +Math.PI)
 		camera_psi -= 2 * Math.PI;
 
-	camera.eye.x = camera_radius * Math.sin(camera_theta) * Math.sin(camera_psi);
-	camera.eye.y = camera_radius * Math.sin(camera_theta) * Math.cos(camera_psi);
-	camera.eye.z = camera_radius * Math.cos(camera_theta);
+	camera.eye[0] = camera_radius * Math.sin(camera_theta) * Math.sin(camera_psi);
+	camera.eye[1] = camera_radius * Math.sin(camera_theta) * Math.cos(camera_psi);
+	camera.eye[2] = camera_radius * Math.cos(camera_theta);
 
 	if (camera_theta < 0)
-		camera.up.z = -1;
+		camera.up[2] = -1;
 	else
-		camera.up.z = +1;
+		camera.up[2] = +1;
 
-	camera.eye.add(camera.lookat);
+	v3add(camera.eye, camera.lookat);
 	camera.update_matrix();
 }
 
@@ -101,9 +101,9 @@ function setup()
 	camera_psi = -150 * Math.PI / 180;
 	camera_radius = 170;
 
-	let eye = createVector(0,camera_radius,0);
-	let lookat = createVector(0,0,00);
-	let up = createVector(0,0,1);
+	let eye = v3new(0,camera_radius,0);
+	let lookat = v3new(0,0,0);
+	let up = v3new(0,0,1);
 	let fov = 80;
 	camera = new Camera(eye,lookat,up,fov);
 
@@ -111,19 +111,19 @@ function setup()
 }
 
 
-function v3_line(p0,p1)
+function v3line(p0,p1)
 {
 	if (verbose)
 	{
 		push()
 		color(255,255,255,40);
 		stroke(0.1);
-		text(p0.z.toFixed(2), p0.x, -p0.y);
-		text(p1.z.toFixed(2), p1.x, -p1.y);
+		text(p0[2].toFixed(2), p0[0], -p0[1]);
+		text(p1[2].toFixed(2), p1[0], -p1[1]);
 		pop();
 	}
 
-	line(p0.x, -p0.y, p1.x, -p1.y);
+	line(p0[0], -p0[1], p1[0], -p1[1]);
 }
 
 
@@ -131,62 +131,63 @@ function drawAxis(camera, lookat)
 {
 	// draw an axis marker at the look-at point
 	const origin = camera.project(lookat)
-	const xaxis = camera.project(new p5.Vector(5,0,0).add(lookat));
-	const yaxis = camera.project(new p5.Vector(0,5,0).add(lookat));
-	const zaxis = camera.project(new p5.Vector(0,0,5).add(lookat));
+	const xaxis = camera.project(v3add(v3new(5,0,0), lookat));
+	const yaxis = camera.project(v3add(v3new(0,5,0), lookat));
+	const zaxis = camera.project(v3add(v3new(0,0,5), lookat));
 	strokeWeight(5);
 
-	if (!xaxis || !yaxis || !zaxis)
+	// are any of the axis points behind the camera?
+	if (xaxis[2] < 0 || yaxis[2] < 0 || zaxis[2] < 0)
 	{
 		// draw them anyway, since no good ordering is possible
 		stroke(255,0,0);
-		if (xaxis) v3_line(origin, xaxis);
+		if (xaxis[2] >= 0) v3line(origin, xaxis);
 		stroke(0,255,0);
-		if (yaxis) v3_line(origin, yaxis);
+		if (yaxis[2] >= 0) v3line(origin, yaxis);
 		stroke(0,0,255);
-		if (zaxis) v3_line(origin, zaxis);
+		if (zaxis[2] >= 0) v3line(origin, zaxis);
 		return;
 	}
 
 	// draw the axis lines in back-to-front order
-	const xd = xaxis.z;
-	const yd = yaxis.z;
-	const zd = zaxis.z;
+	const xd = xaxis[2];
+	const yd = yaxis[2];
+	const zd = zaxis[2];
 	if (xd > yd && yd > zd)
 	{
-		stroke(255,0,0); v3_line(origin, xaxis);
-		stroke(0,255,0); v3_line(origin, yaxis);
-		stroke(0,0,255); v3_line(origin, zaxis);
+		stroke(255,0,0); v3line(origin, xaxis);
+		stroke(0,255,0); v3line(origin, yaxis);
+		stroke(0,0,255); v3line(origin, zaxis);
 	} else
 	if (xd > zd && zd > yd)
 	{
-		stroke(255,0,0); v3_line(origin, xaxis);
-		stroke(0,0,255); v3_line(origin, zaxis);
-		stroke(0,255,0); v3_line(origin, yaxis);
+		stroke(255,0,0); v3line(origin, xaxis);
+		stroke(0,0,255); v3line(origin, zaxis);
+		stroke(0,255,0); v3line(origin, yaxis);
 	} else
 	if (yd > xd && xd > zd)
 	{
-		stroke(0,255,0); v3_line(origin, yaxis);
-		stroke(255,0,0); v3_line(origin, xaxis);
-		stroke(0,0,255); v3_line(origin, zaxis);
+		stroke(0,255,0); v3line(origin, yaxis);
+		stroke(255,0,0); v3line(origin, xaxis);
+		stroke(0,0,255); v3line(origin, zaxis);
 	} else
 	if (yd > zd && zd > xd)
 	{
-		stroke(0,255,0); v3_line(origin, yaxis);
-		stroke(0,0,255); v3_line(origin, zaxis);
-		stroke(255,0,0); v3_line(origin, xaxis);
+		stroke(0,255,0); v3line(origin, yaxis);
+		stroke(0,0,255); v3line(origin, zaxis);
+		stroke(255,0,0); v3line(origin, xaxis);
 	} else
 	if (zd > xd && xd > yd)
 	{
-		stroke(0,0,255); v3_line(origin, zaxis);
-		stroke(255,0,0); v3_line(origin, xaxis);
-		stroke(0,255,0); v3_line(origin, yaxis);
+		stroke(0,0,255); v3line(origin, zaxis);
+		stroke(255,0,0); v3line(origin, xaxis);
+		stroke(0,255,0); v3line(origin, yaxis);
 	} else
 	if (zd > yd && yd > xd)
 	{
-		stroke(0,0,255); v3_line(origin, zaxis);
-		stroke(0,255,0); v3_line(origin, yaxis);
-		stroke(255,0,0); v3_line(origin, xaxis);
+		stroke(0,0,255); v3line(origin, zaxis);
+		stroke(0,255,0); v3line(origin, yaxis);
+		stroke(255,0,0); v3line(origin, xaxis);
 	} else {
 		// wtf how did we end up here?
 	}
@@ -269,8 +270,8 @@ function draw()
 
 		if (move_lookat)
 		{
-			camera.lookat.x += vx;
-			camera.lookat.z += vy;
+			camera.lookat[0] += vx;
+			camera.lookat[2] += vy;
 		} else {
 			camera_psi += vx * 0.01;
 			camera_theta -= vy * 0.01;
@@ -317,8 +318,8 @@ function draw()
 	textSize(12);
 	textAlign(LEFT, BOTTOM);
 
-	text("camera " + int(camera.eye.x) + "," + int(camera.eye.y) + "," + int(camera.eye.z), 10, 30);
-	text("lookat " + int(camera.lookat.x) + "," + int(camera.lookat.y) + "," + int(camera.lookat.z), 10, 50);
+	text("camera " + int(camera.eye[0]) + "," + int(camera.eye[1]) + "," + int(camera.eye[2]), 10, 30);
+	text("lookat " + int(camera.lookat[0]) + "," + int(camera.lookat[1]) + "," + int(camera.lookat[2]), 10, 50);
 
 	text("theta " + int(camera_theta * 180 / Math.PI), 10, 100);
 	text("  psi " + int(camera_psi * 180 / Math.PI), 10, 120);
@@ -339,13 +340,13 @@ function draw()
 	strokeWeight(1);
 	stroke(200,0,0);
 	for(let s of stl.segments)
-		v3_line(s.p0, s.p1);
+		v3line(s.p0, s.p1);
 
 	if (verbose)
 	{
 		stroke(100,0,0,100);
 		for(let s of stl.coplanar)
-			v3_line(s.p0, s.p1);
+			v3line(s.p0, s.p1);
 	}
 
 	// if there are in process ones, draw an XYZ axis at the lookat
@@ -360,7 +361,7 @@ function draw()
 		stroke(0,0,0);
 
 	for(let s of stl.visible_segments)
-		v3_line(s.p0, s.p1);
+		v3line(s.p0, s.p1);
 
 	pop();
 
