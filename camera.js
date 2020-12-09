@@ -93,6 +93,10 @@ function Camera(eye,lookat,up,fov)
 		];
 
 		this.matrix = m44_mult(perspective, cam);
+		this.u = u;
+		this.v = v;
+		this.w = w;
+
 		console.log("Camera matrix: " + this.matrix);
 		this.generation++;
 	}
