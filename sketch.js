@@ -421,7 +421,7 @@ function draw()
 	}
 
 	// Draw all of our visible segments sharply
-	strokeWeight(0.5);
+	strokeWeight(1);
 	if (dark_mode)
 		stroke(255,255,255);
 	else
@@ -429,7 +429,7 @@ function draw()
 
 	if (redblue_mode)
 	{
-		//stroke(0,0,255);
+		// color suggested by https://mastodon.sdf.org/@elb/105351977660915938
 		stroke(0x14, 0xec, 0xfc);
 		for(let s of stl2.visible_segments)
 			v3_line(s.p0, s.p1);
