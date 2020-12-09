@@ -33,7 +33,7 @@
 	reproject=true;
 	eye_separation_slider.style.display = redblue_mode ? '' : 'none';
 "/>
-<input id="eye_separation_slider" type="range" style="display:none" min="1" max="100" value="20" oninput="
+<input id="eye_separation_slider" type="range" style="display:none" min="1" max="100" value="50" oninput="
 	console.log(eye_separation, this);
 	eye_separation=this.value/10;
 	computeEye();
