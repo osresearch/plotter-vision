@@ -1,10 +1,10 @@
 /*
- * Parse a binary STL file into a list of triangles
- * Header (84 bytes):
- *   80 byte header
+ * Parse ascii or binary STL file into a list of triangles
+ * Binary Header (84 bytes):
+ *   80 byte name
  *   uint32_t number of triangles
  *
- * Triangle (50 bytes)
+ * Binary Triangle (50 bytes)
  *   3 32-bit float normals
  *   9 32-bit float x,y,z tripples
  *   uint16_t attributes (ignored)
@@ -14,10 +14,14 @@ let x_offset;
 let y_offset;
 let z_scale = 1;
 dark_mode = true;
+redblue_mode = false;
 verbose = false;
 
 stl = false;
+stl2 = false;
 let camera;
+let camera2; // for 3D
+let eye_separation = 3;
 redraw = false;
 reproject = false;
 let vx = 0;
@@ -60,6 +64,15 @@ function computeEye()
 
 	camera.eye.add(camera.lookat);
 	camera.update_matrix();
+
+	// duplicate for 3D (lookat is shared)
+	camera2.eye.x = camera_radius * Math.sin(camera_theta) * Math.sin(camera_psi + eye_separation * Math.PI / 180);
+	camera2.eye.y = camera_radius * Math.sin(camera_theta) * Math.cos(camera_psi + eye_separation * Math.PI / 180);
+	camera2.eye.z = camera_radius * Math.cos(camera_theta);
+
+	// the lookat and up values are shared between the cameras
+	camera2.eye.add(camera.lookat);
+	camera2.update_matrix();
 }
 
 
@@ -92,6 +105,7 @@ function setup()
 
 	loadBytes("test.stl", function(d){
 		stl = new STL(d);
+		stl2 = new STL(d);
 		reproject = true;
 	});
 
@@ -102,10 +116,12 @@ function setup()
 	camera_radius = 170;
 
 	let eye = createVector(0,camera_radius,0);
+	let eye2 = createVector(0,camera_radius,0);
 	let lookat = createVector(0,0,00);
 	let up = createVector(0,0,1);
-	let fov = 80;
+	let fov = 60;
 	camera = new Camera(eye,lookat,up,fov);
+	camera2 = new Camera(eye2,lookat,up,fov);
 
 	computeEye();
 }
@@ -220,11 +236,40 @@ console.log(keyCode);
 	//return false;
 }
 
+function cameraView(theta,psi)
+{
+	camera_theta = theta * Math.PI / 180;
+	camera_psi = psi * Math.PI / 180;
+	computeEye();
+	reproject = true;
+}
+
 function keyTyped()
 {
 	if (key === 'v')
 	{
 		verbose = !verbose;
+		reproject = true;
+	}
+
+	if (key === '1')
+		cameraView(90, 0);
+
+	if (key === '2')
+		cameraView(90, 90);
+
+	if (key === '3')
+		cameraView(90, 180);
+
+	if (key === '4')
+		cameraView(90, 270);
+
+	if (key === '5')
+		cameraView(1, 1);
+
+	if (key === 't')
+	{
+		redblue_mode = !redblue_mode;
 		reproject = true;
 	}
 }
@@ -284,21 +329,34 @@ function draw()
 		vz = 0;
 	}
 
+	// if there are segments left to process, continue to force redraw
+	if (!stl || !(redraw || reproject))
+		return;
+
+	redraw = false;
 
 	if(reproject)
 	{
 		reproject = false;
 		redraw = true;
 		stl.project(camera);
+		if (redblue_mode)
+			stl2.project(camera2);
 		start_time = performance.now();
 		tri_per_sec = 0;
 	}
 
-	// if there are segments left to process, continue to force redraw
-	if (!stl || !redraw)
-		return;
+	// they are dragging; do not try to do any additional work
+	// and only compute the alterntate view if we're in 3D mode
+	// if there was work done, return true to force another
+	// pass through the draw loop.
+	if (!mouseIsPressed)
+	{
+		if (redblue_mode)
+			stl2.do_work(camera2, 200);
 
-	noStroke();
+		stl.do_work(camera, 200);
+	}
 
 	if (dark_mode)
 	{
@@ -309,6 +367,7 @@ function draw()
 		fill(253);
 	}
 
+	noStroke();
 	textSize(128);
 	textAlign(RIGHT, BOTTOM);
 	text("plotter.vision", width, height);
@@ -337,7 +396,7 @@ function draw()
 
 	// draw all of our in-processing segments lightly
 	strokeWeight(1);
-	stroke(200,0,0);
+	stroke(0,200,0);
 	for(let s of stl.segments)
 		v3_line(s.p0, s.p1);
 
@@ -348,9 +407,18 @@ function draw()
 			v3_line(s.p0, s.p1);
 	}
 
-	// if there are in process ones, draw an XYZ axis at the lookat
 	if (stl.segments.length != 0)
+	{
+		// if there are in process ones,
+		// draw an XYZ axis at the lookat
+		// and keep computing
 		drawAxis(camera, camera.lookat);
+		redraw = true;
+	} else {
+		// all done, this should be our last pass through
+		// the draw loop
+		redraw = false;
+	}
 
 	// Draw all of our visible segments sharply
 	strokeWeight(0.5);
@@ -359,12 +427,17 @@ function draw()
 	else
 		stroke(0,0,0);
 
+	if (redblue_mode)
+	{
+		stroke(0,0,255);
+		for(let s of stl2.visible_segments)
+			v3_line(s.p0, s.p1);
+		stroke(255,0,0);
+	}
+
 	for(let s of stl.visible_segments)
 		v3_line(s.p0, s.p1);
 
 	pop();
 
-	// they are dragging; do not try to do any additional work
-	if (!mouseIsPressed && !vx && !vy)
-		redraw = stl.do_work(camera, 200);
 }

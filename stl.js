@@ -280,5 +280,23 @@ function STL(content)
 		return false;
 	}
 
+	this.svg_path = function()
+	{
+		return this.visible_segments.map(s => {
+			let x0 = s.p0.x + width / 2;
+			let x1 = s.p1.x + width / 2;
+
+			let y0 = height/2 - s.p0.y;
+			let y1 = height/2 - s.p1.y;
+
+			return "M " +
+				x0.toFixed(4) + "," +
+				y0.toFixed(4) + " " +
+				" L " +
+				x1.toFixed(4) + "," +
+				y1.toFixed(4) + "\n"
+		}).join('');
+	};
+
 }
 

@@ -22,6 +22,7 @@
   <body>
 <form id="uploadForm">
 <input type="button" value="Light/Dark" onclick="dark_mode=!dark_mode; redraw=true;" />
+<input type="button" value="3D" onclick="redblue_mode=!redblue_mode; dark_mode=false; reproject=true;" />
 <input id="fileUpload" name="files[]" style="display:none;" type="file"/>
 <input type="button" id="loadFileXml" value="Upload STL" onclick="document.getElementById('fileUpload').click();" />
 <input id="fileDownload" type="button" value="Download SVG" onclick="download()"/>
@@ -45,6 +46,7 @@ document.forms['uploadForm'].elements['fileUpload'].onchange = (evt) => {
 
 		//console.log("content:", raw);
 		stl = new STL(content);
+		stl2 = new STL(content);
 		//console.log("new stl:", stl);
 		reproject = true;
 	};
@@ -59,17 +61,22 @@ document.forms['uploadForm'].elements['fileUpload'].onchange = (evt) => {
 
 function download()
 {	
-	const path = stl.visible_segments.map(x =>
-		"M " + (x.p0.x + width/2) + "," + (height/2 - x.p0.y) + " L " + (x.p1.x + width/2) + "," + (height/2 - x.p1.y)
-	).join('\n');
-
 	let svg = "";
 	svg += "<?xm version='1.0'?>\n";
 	svg += "<svg xmlns='http://www.w3.org/2000/svg' version='1.2' baseProfile='tiny' width='" + width + "px' height='" + height + "px'>\n";
 	svg += "<desc>plotter.vision</desc>";
+
 	svg += "<path d='\n";
-	svg += path;
+	svg += stl.svg_path();
 	svg += "' style='stroke:#ff0000;stroke-width:1'/>";
+
+	if (redblue_mode)
+	{
+		svg += "<path d='\n";
+		svg += stl2.svg_path();
+		svg += "' style='stroke:#0000ff;stroke-width:1'/>";
+	}
+
 	svg += "</svg>";
 
 	svg = encodeURIComponent(svg);
