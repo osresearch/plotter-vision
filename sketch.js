@@ -16,8 +16,9 @@ let z_scale = 1;
 dark_mode = true;
 redblue_mode = false;
 
-// color suggested by https://mastodon.sdf.org/@elb/105351977660915938
-redblue_color = 0x14ecfc;
+// blue color suggested by https://mastodon.sdf.org/@elb/105351977660915938
+red_color = 0xff0000;
+blue_color = 0x14ecfc;
 
 verbose = false;
 
@@ -434,13 +435,18 @@ function draw()
 	if (redblue_mode)
 	{
 		stroke(
-			((redblue_color) >> 16) & 0xFF,
-			((redblue_color) >>  8) & 0xFF,
-			((redblue_color) >>  0) & 0xFF
+			((blue_color) >> 16) & 0xFF,
+			((blue_color) >>  8) & 0xFF,
+			((blue_color) >>  0) & 0xFF
 		);
 		for(let s of stl2.visible_segments)
 			v3_line(s.p0, s.p1);
-		stroke(255,0,0);
+
+		stroke(
+			((red_color) >> 16) & 0xFF,
+			((red_color) >>  8) & 0xFF,
+			((red_color) >>  0) & 0xFF
+		);
 	}
 
 	for(let s of stl.visible_segments)
