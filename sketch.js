@@ -21,7 +21,7 @@ stl = false;
 stl2 = false;
 let camera;
 let camera2; // for 3D
-let eye_separation = 3;
+eye_separation = 3;
 redraw = false;
 reproject = false;
 let vx = 0;
@@ -282,7 +282,7 @@ function mousePressed()
 
 function mouseWheel(event)
 {
-	vz = event.delta * 0.1;
+	vz = event.delta * 10;
 }
  
 function windowResized() {
@@ -301,8 +301,8 @@ function draw()
 
 	if (mouseIsPressed && mouseY >= 0)
 	{
-		vx = mouseX - last_x;
-		vy = mouseY - last_y;
+		vx = (mouseX - last_x) * 0.5;
+		vy = (mouseY - last_y) * 0.5;
 		last_x = mouseX;
 		last_y = mouseY;
 	}
@@ -407,7 +407,7 @@ function draw()
 			v3_line(s.p0, s.p1);
 	}
 
-	if (stl.segments.length != 0)
+	if (stl.segments.length != 0 || (redblue_mode && stl2.segments.length != 0))
 	{
 		// if there are in process ones,
 		// draw an XYZ axis at the lookat
@@ -429,7 +429,8 @@ function draw()
 
 	if (redblue_mode)
 	{
-		stroke(0,0,255);
+		//stroke(0,0,255);
+		stroke(0x14, 0xec, 0xfc);
 		for(let s of stl2.visible_segments)
 			v3_line(s.p0, s.p1);
 		stroke(255,0,0);
