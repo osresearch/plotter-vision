@@ -14,13 +14,14 @@ let x_offset;
 let y_offset;
 let z_scale = 1;
 dark_mode = true;
+redblue_mode = false;
 verbose = false;
 
 stl = false;
 stl2 = false;
 let camera;
 let camera2; // for 3D
-let eye_separation = 10;
+let eye_separation = 3;
 redraw = false;
 reproject = false;
 let vx = 0;
@@ -56,13 +57,6 @@ function computeEye()
 	camera.eye.y = camera_radius * Math.sin(camera_theta) * Math.cos(camera_psi);
 	camera.eye.z = camera_radius * Math.cos(camera_theta);
 
-	// displace the camera2 eye by a little bit
-	// for 3D effect.  The u vector points to the right of the camera
-	// although there is a problem with up when we are close to theta
-	camera2.eye.x = camera.eye.x + camera.u.x * eye_separation;
-	camera2.eye.y = camera.eye.y + camera.u.y * eye_separation;
-	camera2.eye.z = camera.eye.z + camera.u.z * eye_separation;
-
 	if (camera_theta < 0)
 		camera.up.z = -1;
 	else
@@ -71,7 +65,12 @@ function computeEye()
 	camera.eye.add(camera.lookat);
 	camera.update_matrix();
 
-	// duplicate for 3D (lookat and up are shared)
+	// duplicate for 3D (lookat is shared)
+	camera2.eye.x = camera_radius * Math.sin(camera_theta) * Math.sin(camera_psi + eye_separation * Math.PI / 180);
+	camera2.eye.y = camera_radius * Math.sin(camera_theta) * Math.cos(camera_psi + eye_separation * Math.PI / 180);
+	camera2.eye.z = camera_radius * Math.cos(camera_theta);
+
+	// the lookat and up values are shared between the cameras
 	camera2.eye.add(camera.lookat);
 	camera2.update_matrix();
 }
@@ -120,7 +119,7 @@ function setup()
 	let eye2 = createVector(0,camera_radius,0);
 	let lookat = createVector(0,0,00);
 	let up = createVector(0,0,1);
-	let fov = 80;
+	let fov = 60;
 	camera = new Camera(eye,lookat,up,fov);
 	camera2 = new Camera(eye2,lookat,up,fov);
 
@@ -244,6 +243,12 @@ function keyTyped()
 		verbose = !verbose;
 		reproject = true;
 	}
+
+	if (key === '3')
+	{
+		redblue_mode = !redblue_mode;
+		reproject = true;
+	}
 }
 
 function mousePressed()
@@ -301,22 +306,21 @@ function draw()
 		vz = 0;
 	}
 
+	// if there are segments left to process, continue to force redraw
+	if (!stl || !redraw)
+		return;
+	redraw = false;
 
 	if(reproject)
 	{
 		reproject = false;
 		redraw = true;
 		stl.project(camera);
-		stl2.project(camera2);
+		if (redblue_mode)
+			stl2.project(camera2);
 		start_time = performance.now();
 		tri_per_sec = 0;
 	}
-
-	// if there are segments left to process, continue to force redraw
-	if (!stl || !redraw)
-		return;
-
-	noStroke();
 
 	if (dark_mode)
 	{
@@ -327,6 +331,7 @@ function draw()
 		fill(253);
 	}
 
+	noStroke();
 	textSize(128);
 	textAlign(RIGHT, BOTTOM);
 	text("plotter.vision", width, height);
@@ -377,20 +382,29 @@ function draw()
 	else
 		stroke(0,0,0);
 
-	stroke(255,0,0);
-	for(let s of stl.visible_segments)
-		v3_line(s.p0, s.p1);
+	if (redblue_mode)
+	{
+		stroke(0,0,255);
+		for(let s of stl2.visible_segments)
+			v3_line(s.p0, s.p1);
+		stroke(255,0,0);
+	}
 
-	stroke(0,0,255);
-	for(let s of stl2.visible_segments)
+	for(let s of stl.visible_segments)
 		v3_line(s.p0, s.p1);
 
 	pop();
 
 	// they are dragging; do not try to do any additional work
+	// and only compute the alterntate view if we're in 3D mode
+	// if there was work done, return true to force another
+	// pass through the draw loop.
 	if (!mouseIsPressed && !vx && !vy)
 	{
-		stl2.do_work(camera2, 200);
-		redraw = stl.do_work(camera, 200);
+		if (redblue_mode && stl2.do_work(camera2, 200))
+			redraw = true;
+
+		if (stl.do_work(camera, 200))
+			redraw = true;
 	}
 }
