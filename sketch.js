@@ -236,6 +236,14 @@ console.log(keyCode);
 	//return false;
 }
 
+function cameraView(theta,psi)
+{
+	camera_theta = theta * Math.PI / 180;
+	camera_psi = psi * Math.PI / 180;
+	computeEye();
+	reproject = true;
+}
+
 function keyTyped()
 {
 	if (key === 'v')
@@ -244,7 +252,22 @@ function keyTyped()
 		reproject = true;
 	}
 
+	if (key === '1')
+		cameraView(90, 0);
+
+	if (key === '2')
+		cameraView(90, 90);
+
 	if (key === '3')
+		cameraView(90, 180);
+
+	if (key === '4')
+		cameraView(90, 270);
+
+	if (key === '5')
+		cameraView(1, 1);
+
+	if (key === 't')
 	{
 		redblue_mode = !redblue_mode;
 		reproject = true;
@@ -307,8 +330,9 @@ function draw()
 	}
 
 	// if there are segments left to process, continue to force redraw
-	if (!stl || !redraw)
+	if (!stl || !(redraw || reproject))
 		return;
+
 	redraw = false;
 
 	if(reproject)
@@ -320,6 +344,18 @@ function draw()
 			stl2.project(camera2);
 		start_time = performance.now();
 		tri_per_sec = 0;
+	}
+
+	// they are dragging; do not try to do any additional work
+	// and only compute the alterntate view if we're in 3D mode
+	// if there was work done, return true to force another
+	// pass through the draw loop.
+	if (!mouseIsPressed)
+	{
+		if (redblue_mode)
+			stl2.do_work(camera2, 200);
+
+		stl.do_work(camera, 200);
 	}
 
 	if (dark_mode)
@@ -371,9 +407,18 @@ function draw()
 			v3_line(s.p0, s.p1);
 	}
 
-	// if there are in process ones, draw an XYZ axis at the lookat
 	if (stl.segments.length != 0)
+	{
+		// if there are in process ones,
+		// draw an XYZ axis at the lookat
+		// and keep computing
 		drawAxis(camera, camera.lookat);
+		redraw = true;
+	} else {
+		// all done, this should be our last pass through
+		// the draw loop
+		redraw = false;
+	}
 
 	// Draw all of our visible segments sharply
 	strokeWeight(0.5);
@@ -395,16 +440,4 @@ function draw()
 
 	pop();
 
-	// they are dragging; do not try to do any additional work
-	// and only compute the alterntate view if we're in 3D mode
-	// if there was work done, return true to force another
-	// pass through the draw loop.
-	if (!mouseIsPressed && !vx && !vy)
-	{
-		if (redblue_mode && stl2.do_work(camera2, 200))
-			redraw = true;
-
-		if (stl.do_work(camera, 200))
-			redraw = true;
-	}
 }
