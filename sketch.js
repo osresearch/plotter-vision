@@ -26,7 +26,7 @@ stl = false;
 stl2 = false;
 let camera;
 let camera2; // for 3D
-eye_separation = 5;
+eye_separation = 2;
 redraw = false;
 reproject = false;
 let vx = 0;
