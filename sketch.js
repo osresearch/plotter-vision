@@ -71,8 +71,10 @@ function computeEye()
 	camera.update_matrix();
 
 	// duplicate for 3D (lookat is shared)
-	camera2.eye.x = camera_radius * Math.sin(camera_theta) * Math.sin(camera_psi + eye_separation * Math.PI / 180);
-	camera2.eye.y = camera_radius * Math.sin(camera_theta) * Math.cos(camera_psi + eye_separation * Math.PI / 180);
+	// should scale the eye separation based on the radius since
+	// otherwise it becomes weird at long distances
+	camera2.eye.x = camera_radius * Math.sin(camera_theta) * Math.sin(camera_psi - eye_separation * Math.PI / 180);
+	camera2.eye.y = camera_radius * Math.sin(camera_theta) * Math.cos(camera_psi - eye_separation * Math.PI / 180);
 	camera2.eye.z = camera_radius * Math.cos(camera_theta);
 
 	// the lookat and up values are shared between the cameras
@@ -287,7 +289,7 @@ function mousePressed()
 
 function mouseWheel(event)
 {
-	vz = event.delta * 10;
+	vz = event.delta * 0.5;
 }
  
 function windowResized() {
@@ -401,7 +403,10 @@ function draw()
 
 	// draw all of our in-processing segments lightly
 	strokeWeight(1);
-	stroke(0,200,0);
+	if (redblue_mode)
+		stroke(200,0,200,100);
+	else
+		stroke(0,200,0);
 	for(let s of stl.segments)
 		v3_line(s.p0, s.p1);
 
@@ -437,7 +442,8 @@ function draw()
 		stroke(
 			((blue_color) >> 16) & 0xFF,
 			((blue_color) >>  8) & 0xFF,
-			((blue_color) >>  0) & 0xFF
+			((blue_color) >>  0) & 0xFF,
+			200
 		);
 		for(let s of stl2.visible_segments)
 			v3_line(s.p0, s.p1);
@@ -445,7 +451,8 @@ function draw()
 		stroke(
 			((red_color) >> 16) & 0xFF,
 			((red_color) >>  8) & 0xFF,
-			((red_color) >>  0) & 0xFF
+			((red_color) >>  0) & 0xFF,
+			80
 		);
 	}
 
