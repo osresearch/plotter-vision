@@ -73,8 +73,11 @@ function computeEye()
 	// duplicate for 3D (lookat is shared)
 	// should scale the eye separation based on the radius since
 	// otherwise it becomes weird at long distances
-	camera2.eye.x = camera_radius * Math.sin(camera_theta) * Math.sin(camera_psi - eye_separation * Math.PI / 180);
-	camera2.eye.y = camera_radius * Math.sin(camera_theta) * Math.cos(camera_psi - eye_separation * Math.PI / 180);
+	// in DARK mode, the eye glasses seem to be backwards?
+	// normally left eye is red, right eye is blue, but
+	// that messes up with a dark background.
+	camera2.eye.x = camera_radius * Math.sin(camera_theta) * Math.sin(camera_psi + eye_separation * Math.PI / 180);
+	camera2.eye.y = camera_radius * Math.sin(camera_theta) * Math.cos(camera_psi + eye_separation * Math.PI / 180);
 	camera2.eye.z = camera_radius * Math.cos(camera_theta);
 
 	// the lookat and up values are shared between the cameras
