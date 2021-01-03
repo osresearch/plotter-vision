@@ -82,13 +82,13 @@ function download()
 
 	svg += "<path d='\n";
 	svg += stl.svg_path();
-	svg += "' style='stroke:#ff0000;stroke-width:1'/>";
+	svg += "' style='stroke:#ff0000;stroke-width:1;fill:none'/>";
 
 	if (redblue_mode)
 	{
 		svg += "<path d='\n";
 		svg += stl2.svg_path();
-		svg += "' style='stroke:#0000ff;stroke-width:1'/>";
+		svg += "' style='stroke:#0000ff;stroke-width:1;fill:none'/>";
 	}
 
 	svg += "</svg>";
