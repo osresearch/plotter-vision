@@ -280,42 +280,115 @@ function STL(content)
 		return false;
 	}
 
-	this.svg_path = function()
+	this.find_closest_vector = function(x,y,workq)
 	{
-		const seen = {};
+		let best_dist = 1e9;
+		let best_index = -1;
+		let best = null;
+		let do_reverse = false;
 
-		return this.visible_segments.map(s => {
-			let x0 = s.p0.x + width / 2;
-			let x1 = s.p1.x + width / 2;
+		for(let i = 0 ; i < workq.length ; i++)
+		{
+			const vec = workq[i];
+			if (!vec)
+				continue;
 
-			let y0 = height/2 - s.p0.y;
-			let y1 = height/2 - s.p1.y;
-
-			// convert to canonical ordering
-			// by x coordinate and then y coordinate
-			if (x1 < x0)
+			let dx0 = vec.p0.x - x;
+			let dy0 = vec.p0.y - y;
+			let dist0 = dx0*dx0 + dy0*dy0;
+			if (dist0 < best_dist)
 			{
-				const xt = x0;
-				const yt = y0;
-				x0 = x1;
-				x1 = xt;
-
-				y0 = y1;
-				y1 = yt;
+				best = vec;
+				best_index = i;
+				best_dist = dist0;
+				do_reverse = false;
 			}
 
-			const line = "M " +
-				x0.toFixed(4) + "," +
-				y0.toFixed(4) + " " +
-				" L " +
-				x1.toFixed(4) + "," +
-				y1.toFixed(4) + "\n"
+			let dx1 = vec.p1.x - x;
+			let dy1 = vec.p1.y - y;
+			let dist1 = dx1*dx1 + dy1*dy1;
+			if (dist1 < best_dist)
+			{
+				best = vec;
+				best_index = i;
+				best_dist = dist1;
+				do_reverse = true;
+			}
+		}
 
-			if (line in seen)
-				return '';
-			seen[line] = 1;
-			return line;
-		}).join('');
+		if (!best)
+			return null;
+
+		workq[best_index] = null;
+		if (do_reverse)
+		{
+			const temp = best.p0;
+			best.p0 = best.p1;
+			best.p1 = temp;
+		}
+
+		return best;
+	}
+
+	this.svg_path = function()
+	{
+		// create a list of vectors, removing any duplicates
+		const duplicates = {};
+		let workq = this.visible_segments.map(s => {
+			let p0 = s.p0;
+			let p1 = s.p1;
+			if (p1.x < p0.x)
+			{
+				p0 = s.p1;
+				p1 = s.p0;
+			}
+
+			// create the string form to track duplicates
+			const str = p0.x.toFixed(4) + "," + p0.y.toFixed(4) +
+				" " +
+				p1.x.toFixed(4) + "," + p1.y.toFixed(4);
+
+			if (str in duplicates)
+				return null;
+			duplicates[str] = 1;
+			return { p0: p0, p1: p1 };
+		});
+
+		let ox = 0;
+		let oy = 0;
+		let path = '';
+		let vec;
+		while (vec = this.find_closest_vector(ox,oy,workq))
+		{
+			let sx = vec.p0.x;
+			let sy = vec.p0.y;
+			let ex = vec.p1.x;
+			let ey = vec.p1.y;
+			let x0 = sx + width / 2;
+			let x1 = ex + width / 2;
+
+			let y0 = height/2 - sy;
+			let y1 = height/2 - ey;
+
+			if (sx != ox || sy != oy)
+			{
+				// start a new line
+				path += "\nM " +
+				x0.toFixed(4) + "," +
+				y0.toFixed(4) + " ";
+			}
+
+			// draw a segment to the end
+			path += " L " +
+				x1.toFixed(4) + "," +
+				y1.toFixed(4)
+
+			// and start searching from the end of this line
+			ox = ex;
+			oy = ey;
+		};
+
+		return path + "\n";
 	};
 
 }
