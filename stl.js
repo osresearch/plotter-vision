@@ -282,6 +282,8 @@ function STL(content)
 
 	this.svg_path = function()
 	{
+		const seen = {};
+
 		return this.visible_segments.map(s => {
 			let x0 = s.p0.x + width / 2;
 			let x1 = s.p1.x + width / 2;
@@ -289,12 +291,30 @@ function STL(content)
 			let y0 = height/2 - s.p0.y;
 			let y1 = height/2 - s.p1.y;
 
-			return "M " +
+			// convert to canonical ordering
+			// by x coordinate and then y coordinate
+			if (x1 < x0)
+			{
+				const xt = x0;
+				const yt = y0;
+				x0 = x1;
+				x1 = xt;
+
+				y0 = y1;
+				y1 = yt;
+			}
+
+			const line = "M " +
 				x0.toFixed(4) + "," +
 				y0.toFixed(4) + " " +
 				" L " +
 				x1.toFixed(4) + "," +
 				y1.toFixed(4) + "\n"
+
+			if (line in seen)
+				return '';
+			seen[line] = 1;
+			return line;
 		}).join('');
 	};
 
