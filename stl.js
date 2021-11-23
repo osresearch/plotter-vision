@@ -43,7 +43,12 @@ function stl_ascii(content)
 	});
 
 	console.log("vertex count = ", vertex.length);
+	return vertex;
+}
 
+
+function vertex2triangles(vertex)
+{
 	let triangles = [];
 	for(let i = 0 ; i < vertex.length ; i += 3)
 	{
@@ -79,16 +84,16 @@ function stl_binary(rawbytes)
 	}
 
 
+	let vertex = [];
+
 	for (let offset = 84 ; offset < len ; offset += 50)
 	{
-		triangles.push(new Triangle(
-			parse_xyz(bytes, offset + 12),
-			parse_xyz(bytes, offset + 24),
-			parse_xyz(bytes, offset + 36),
-		));
+		vertex.push(parse_xyz(bytes, offset + 12));
+		vertex.push(parse_xyz(bytes, offset + 24));
+		vertex.push(parse_xyz(bytes, offset + 36));
 	}
 
-	return triangles;
+	return vertex;
 }
 
 
@@ -98,11 +103,47 @@ function STL(content)
 	const txtbytes = new TextDecoder("utf-8").decode(rawbytes)
 
 	// heuristic to detect ASCII formatted files
+	let vertex;
 	if (txtbytes.substr(0,6) == "solid ") {
-		this.triangles = stl_ascii(txtbytes);
+		vertex = stl_ascii(txtbytes);
 	} else {
-		this.triangles = stl_binary(rawbytes);
+		vertex = stl_binary(rawbytes);
 	}
+
+	// find the total size of the object and scale
+	// it to fit in 100x100x100
+	let minxyz = vertex[0].copy();
+	let maxxyz = vertex[0].copy();
+
+	for(v of vertex)
+	{
+		if (v.x < minxyz.x) minxyz.x = v.x;
+		if (v.y < minxyz.y) minxyz.y = v.y;
+		if (v.z < minxyz.z) minxyz.z = v.z;
+		if (v.x > maxxyz.x) maxxyz.x = v.x;
+		if (v.y > maxxyz.y) maxxyz.y = v.y;
+		if (v.z > maxxyz.z) maxxyz.z = v.z;
+	}
+
+	let dx = maxxyz.x - minxyz.x;
+	let dy = maxxyz.y - minxyz.y;
+	let dz = maxxyz.z - minxyz.z;
+
+	let s = 100 / max(dx,dy,dz);
+	let mx = minxyz.x + dx/2;
+	let my = minxyz.y + dy/2;
+	let mz = minxyz.z + dz/2;
+
+	console.log("Scale", s, minxyz, maxxyz, dx, dy, dz, "mid", mx, my, mz);
+
+	for(v of vertex)
+	{
+		v.x = (v.x - mx) * s;
+		v.y = (v.y - my) * s;
+		v.z = (v.z - mz) * s;
+	}
+
+	this.triangles = vertex2triangles(vertex);
 
 	// trade some accuracy for faster rendering and better drawing
 	this.min_length = 5;
