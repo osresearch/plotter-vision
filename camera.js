@@ -47,7 +47,7 @@ function Camera(eye,lookat,up,fov)
 
 		let x = p[0] / p[3];
 		let y = p[1] / p[3];
-		let z = p[2];
+		let z = p[2] / p[3];
 		if (!v_out)
 			return createVector(x,y,z);
 

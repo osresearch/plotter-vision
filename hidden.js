@@ -12,7 +12,7 @@ const tri_in_front = 1; // no occlusion and processing should stop
 const tri_hidden = 2; // occlusion and the segment is totally hidden
 const tri_clipped = 3; // occlusion and either p0 or p1 has been updated
 const tri_split = 4; //  occlusion and p0/p1 have been updated and p2/p3 have been created
-const EPS = 0.001;
+const EPS = 0.000001;
 
 let p_max = null;
 let p_min = null;
