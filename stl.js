@@ -330,17 +330,107 @@ function STL(content)
 		return best;
 	}
 
+	// compute which of the nine possible outcodes the point is in
+	// relative to the viewing window
+	this.outcode = function(p,xmin,xmax,ymin,ymax)
+	{
+		let outcode = 0;
+		if (p.x < xmin)
+			outcode |= 0b0001;
+		else
+		if (p.x > xmax)
+			outcode |= 0b0010;
+
+		if (p.y < ymin)
+			outcode |= 0b0100;
+		else
+		if (p.y > ymax)
+			outcode |= 0b1000;
+
+		return outcode;
+	}
+
+	this.clip_to_win = function(p0,p1,xmin,xmax,ymin,ymax)
+	{
+		// check to see if a vector is partially
+		// on screen and if so, truncate it to screen
+		// cordinates using the Cohen–Sutherland algorithm
+		let outcode0 = this.outcode(p0,xmin,xmax,ymin,ymax);
+		let outcode1 = this.outcode(p1,xmin,xmax,ymin,ymax);
+
+		// both points share an outside,
+		// so the segment is entirely outside
+		if ((outcode0 & outcode1) != 0)
+			return null;
+
+		// both points are inside, so
+		// the segment is entirely visible
+		if ((outcode0 | outcode1) == 0)
+			return [p0,p1];
+
+		// at least one is outside the clip
+		let outcode = outcode1 > outcode0 ? outcode1 : outcode0;
+		let dx = p1.x - p0.x;
+		let dy = p1.y - p0.y;
+		let x, y;
+		if (outcode & 0b1000)
+		{
+			// point is above
+			x = p0.x + dx * (ymax - p0.y) / dy;
+			y = ymax;
+		} else
+		if (outcode & 0b0100)
+		{
+			// point is below
+			x = p0.x + dx * (ymin - p0.y) / dy;
+			y = ymin;
+		} else
+		if (outcode & 0b0010)
+		{
+			// point is to the right
+			x = xmax;
+			y = p0.y + dy * (xmax - p0.x) / dx;
+		} else
+		if (outcode & 0b0001)
+		{
+			// point is to the left
+			x = xmin;
+			y = p0.y + dy * (xmin - p0.x) / dx;
+		}
+
+		if (outcode == outcode0)
+		{
+			p0.x = x;
+			p0.y = y;
+		} else {
+			p1.x = x;
+			p1.y = y;
+		}
+
+		// trim the other side
+		return this.clip_to_win(p0,p1,xmin,xmax,ymin,ymax);
+	}
+
 	this.svg_path = function()
 	{
 		// create a list of vectors, removing any duplicates
+		// and sorting by x value
 		const duplicates = {};
 		let workq = this.visible_segments.map(s => {
-			let p0 = s.p0;
-			let p1 = s.p1;
+			let pts = this.clip_to_win(
+				s.p0, s.p1,
+				-width/2, width/2,
+				-height/2, height/2);
+			if (!pts)
+				return null;
+
+			let p0 = pts[0];
+			let p1 = pts[1];
+
 			if (p1.x < p0.x)
 			{
-				p0 = s.p1;
-				p1 = s.p0;
+				p0 = pts[1];
+				p1 = pts[0];
 			}
 
 			// create the string form to track duplicates
