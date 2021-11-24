@@ -80,15 +80,20 @@ function download()
 	svg += "<svg xmlns='http://www.w3.org/2000/svg' version='1.2' baseProfile='tiny' width='" + width + "px' height='" + height + "px'>\n";
 	svg += "<desc>plotter.vision</desc>";
 
+	if (redblue_mode)
+		svg += "<g id='layer1' inkscape:groupmode='layer' inkscape:label='Red'>\n"
+
 	svg += "<path d='\n";
 	svg += stl.svg_path();
 	svg += "' style='stroke:#ff0000;stroke-width:1;fill:none'/>";
 
 	if (redblue_mode)
 	{
+		svg += "\n</g>\n<g id='layer2' inkscape:groupmode='layer' inkscape:label='Blue'>\n"
 		svg += "<path d='\n";
 		svg += stl2.svg_path();
 		svg += "' style='stroke:#0000ff;stroke-width:1;fill:none'/>";
+		svg += "\n</g>\n";
 	}
 
 	svg += "</svg>";
