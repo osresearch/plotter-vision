@@ -202,6 +202,15 @@ function STL(content)
 		if (t.invisible)
 			return;
 
+		// if the triangle is less than a pixel of screen,
+		// drop it.  this might cause problems with very fine
+		// detailed meshed, but those aren't good for plotting.
+		if (t.area() < 2)
+		{
+			//console.log(t, "filtered area", t.area());
+			return;
+		}
+
 		// this one is on screen, create segments for each
 		// of its non-coplanar edges
 		let t0 = t.screen[0];
@@ -475,9 +484,11 @@ function STL(content)
 			}
 
 			// create the string form to track duplicates
-			const str = p0.x.toFixed(4) + "," + p0.y.toFixed(4) +
+			// issue #27: tiny triangles end up duplicated
+			const precision = 0;
+			const str = p0.x.toFixed(precision) + "," + p0.y.toFixed(precision) +
 				" " +
-				p1.x.toFixed(4) + "," + p1.y.toFixed(4);
+				p1.x.toFixed(precision) + "," + p1.y.toFixed(precision);
 
 			if (str in duplicates)
 				return null;

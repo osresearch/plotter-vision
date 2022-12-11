@@ -211,6 +211,21 @@ function Triangle(p0, p1, p2)
 			this.screen[0].z + a * t1.z + b * t2.z,
 		);
 	}
+
+	// compute the area of the triangle in screen coordinates
+	// todo: use shoelace formula to compute area of coplanar region instead
+	// https://en.wikipedia.org/wiki/Shoelace_formula
+	this.area = function()
+	{
+		let xa = this.screen[0].x;
+		let ya = this.screen[0].y;
+		let xb = this.screen[1].x;
+		let yb = this.screen[1].y;
+		let xc = this.screen[2].x;
+		let yc = this.screen[2].y;
+
+		return (xa*yb + xb*yc + xc*ya - xa*yc - xc*yb - xb*ya) / 2;
+	}
 }
 
 
