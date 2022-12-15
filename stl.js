@@ -465,7 +465,10 @@ function STL(content)
 	{
 		// create a list of vectors, removing any duplicates
 		// and sorting by x value
-		const duplicates = {};
+		// issue #27: tiny triangles end up duplicated
+		const drawn = [];
+		const precision = 4;
+
 		let workq = this.visible_segments.map(s => {
 			let pts = this.clip_to_win(
 				s.p0, s.p1,
@@ -483,16 +486,27 @@ function STL(content)
 				p1 = pts[0];
 			}
 
-			// create the string form to track duplicates
-			// issue #27: tiny triangles end up duplicated
-			const precision = 0;
-			const str = p0.x.toFixed(precision) + "," + p0.y.toFixed(precision) +
-				" " +
-				p1.x.toFixed(precision) + "," + p1.y.toFixed(precision);
+			for(const p of drawn)
+			{
+				const d00 = dist2(p0, p[0]);
+				const d01 = dist2(p0, p[1]);
+				const d10 = dist2(p1, p[0]);
+				const d11 = dist2(p1, p[1]);
 
-			if (str in duplicates)
-				return null;
-			duplicates[str] = 1;
+				if (d00 < precision && d11 < precision)
+				{
+					console.log("filtered", p0, p1);
+					return null;
+				}
+				if (d10 < precision && d01 < precision)
+				{
+					console.log("filtered", p0, p1);
+					return null;
+				}
+			}
+
+			drawn.push([p0, p1]);
+
 			return { p0: p0, p1: p1 };
 		});
 
